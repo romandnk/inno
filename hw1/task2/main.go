@@ -12,14 +12,10 @@ func main() {
 		return
 	}
 
-	action, err := NewAction(args[0])
-	if err != nil {
-		fmt.Println("invalid action ('create', 'read', 'delete')")
-		return
-	}
+	hub := NewActionsHub()
 
-	path := args[1]
-	err = action.Do(path)
+	action, path := args[0], args[1]
+	err := hub.Handle(action, path)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
