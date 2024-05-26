@@ -70,10 +70,13 @@ func readCSVFile(tmp, f *os.File, rowsBatch *[][]string) (<-chan [][]string, err
 	out := make(chan [][]string)
 
 	r := csv.NewReader(f)
-	// read columns and write then in the temp file
+	// read columns names and then write in the temp file
 	columns, err := r.Read()
 	if err != nil {
 		return nil, fmt.Errorf("error reading columns: %v", err)
+	}
+	if len(columns) != 2 {
+		return nil, fmt.Errorf("expected 2 columns, got %d", len(columns))
 	}
 	w := csv.NewWriter(tmp)
 	err = w.Write(columns)
@@ -128,7 +131,7 @@ func shuffleBatch(in <-chan [][]string) chan [][]string {
 }
 
 func mergeShuffledRows(tmpFile *os.File, in ...chan [][]string) (*os.File, error) {
-	row := make(chan []string)
+	row := make(chan []string, batchSize)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(in))

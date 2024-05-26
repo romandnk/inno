@@ -18,10 +18,13 @@ func StartTest(f *os.File) (Answers, error) {
 	ans := Answers{}
 
 	r := csv.NewReader(f)
-	//skip a row with column names
-	_, err := r.Read()
+	// get columns names
+	columns, err := r.Read()
 	if err != nil {
-		return ans, fmt.Errorf("error skipping csv file columns names: %w", err)
+		return ans, fmt.Errorf("error getting csv file columns names: %w", err)
+	}
+	if len(columns) != 2 {
+		return ans, fmt.Errorf("expected 2 columns, got %d", len(columns))
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
