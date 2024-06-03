@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rodaine/table"
 	readdz "inno/hw2/readDz"
+	"math"
 )
 
 /* 4. Для предыдущей задачи необходимо вывести сводную таблицу по всем предметам в виде:
@@ -30,38 +31,39 @@ func main() {
 		return
 	}
 
-	studentsByID := make(map[int]readdz.Students, len(data.Students))
+	// решение с учетом того, что каждый предмет есть у каждого ученика
+	numstudentsByGrade := make(map[int]int, len(data.Students))
+	studentsById := make(map[int]readdz.Students, len(data.Students))
 	for _, student := range data.Students {
-		studentsByID[student.Id] = student
+		studentsById[student.Id] = student
+		numstudentsByGrade[student.Grade]++
 	}
 
-	objectsByID := make(map[int]readdz.Objects, len(data.Objects))
-	for _, object := range data.Objects {
-		objectsByID[object.Id] = object
+	allResultByObject := make(map[int][]readdz.Results, 3)
+	for _, results := range data.Results {
+		allResultByObject[results.ObjectId] = append(allResultByObject[results.ObjectId], results)
 	}
 
 	for _, obj := range data.Objects {
 		tbl := table.New(obj.Name, "Mean")
 		tbl.WithHeaderSeparatorRow('-')
 
-		allResultByObject := make([]readdz.Results, 0, len(data.Objects)*len(data.Students))
-		for _, results := range data.Results {
-			if results.ObjectId == obj.Id {
-				allResultByObject = append(allResultByObject, results)
-			}
-		}
-
 		sumByGrade := make(map[int]float64, len(data.Objects)*len(data.Students))
-		studentsByGrade := make(map[int]int, len(data.Students))
-		for _, result := range allResultByObject {
-			student := studentsByID[result.StudentId]
-			studentsByGrade[student.Grade]++
+
+		resultsByObject := allResultByObject[obj.Id]
+
+		for _, result := range resultsByObject {
+			student := studentsById[result.StudentId]
 			sumByGrade[student.Grade] += float64(result.Result)
 		}
 
+		var overallMean float64
 		for grade, sum := range sumByGrade {
-			tbl.AddRow(grade, sum/float64(studentsByGrade[grade]), sum)
+			mean := sum / float64(numstudentsByGrade[grade])
+			overallMean += mean
+			tbl.AddRow(grade, mean, sum)
 		}
+		tbl.AddRow("mean", math.Round(overallMean/3*100)/100)
 
 		tbl.Print()
 		fmt.Println("-----------")
