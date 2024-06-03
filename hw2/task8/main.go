@@ -7,16 +7,23 @@ package main
 */
 
 func IsEqualArrays[T comparable](first, second []T) bool {
+	if len(first) != len(second) {
+		return false
+	}
+
 	firstElems := make(map[T]int, len(first))
 	for _, elem := range first {
 		firstElems[elem]++
 	}
 
+	secondElems := make(map[T]int, len(second))
 	for _, elem := range second {
-		if _, ok := firstElems[elem]; !ok {
+		secondElems[elem]++
+	}
+
+	for elem, count := range firstElems {
+		if count != secondElems[elem] {
 			return false
-		} else {
-			firstElems[elem]--
 		}
 	}
 
