@@ -16,14 +16,14 @@ func IsEqualArrays[T comparable](first, second []T) bool {
 		firstElems[elem]++
 	}
 
-	secondElems := make(map[T]int, len(second))
 	for _, elem := range second {
-		secondElems[elem]++
-	}
-
-	for elem, count := range firstElems {
-		if count != secondElems[elem] {
+		if _, ok := firstElems[elem]; !ok {
 			return false
+		} else {
+			firstElems[elem]--
+			if firstElems[elem] < 0 {
+				return false
+			}
 		}
 	}
 
