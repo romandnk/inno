@@ -26,6 +26,9 @@ func findIntersections(slices ...[]int) []int {
 
 	intersections := make(map[int]int)
 	for _, slice := range slices {
+		if len(slice) == 0 {
+			return result
+		}
 		seen := make(map[int]struct{})
 		for _, el := range slice {
 			if _, ok := seen[el]; !ok {
