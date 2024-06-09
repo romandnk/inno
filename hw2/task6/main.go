@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/rodaine/table"
+	"golang.org/x/exp/constraints"
 	readdz "inno/hw2/readDz"
-	"math"
 )
 
 /* 6. Перепишите задачу #4 с использованием функций высшего порядка, изученных на лекции.
@@ -18,64 +18,60 @@ func main() {
 		return
 	}
 
-	// решение с учетом того, что каждый предмет есть у каждого ученика
-	numstudentsByGrade := make(map[int]int, len(data.Students))
 	studentsById := make(map[int]readdz.Students, len(data.Students))
 	for _, student := range data.Students {
 		studentsById[student.Id] = student
-		numstudentsByGrade[student.Grade]++
 	}
 
-	allResultByObject := make(map[int][]readdz.Results, 3)
-	for _, results := range data.Results {
-		allResultByObject[results.ObjectId] = append(allResultByObject[results.ObjectId], results)
+	// key is a subject id, value is a map which contains grade as a key and assessments as values
+	objGrades := make(map[int]map[int][]int, len(data.Objects))
+	for _, res := range data.Results {
+		if _, ok := objGrades[res.ObjectId]; !ok {
+			objGrades[res.ObjectId] = make(map[int][]int)
+		}
+
+		student := studentsById[res.StudentId]
+		objGrades[res.ObjectId][student.Grade] = append(objGrades[res.ObjectId][student.Grade], res.Result)
 	}
 
 	for _, obj := range data.Objects {
 		tbl := table.New(obj.Name, "Mean")
 		tbl.WithHeaderSeparatorRow('-')
 
-		sumByGrade := make(map[int]float64, len(data.Objects)*len(data.Students))
-
-		resultsByObject := allResultByObject[obj.Id]
-
-		for _, result := range resultsByObject {
-			student := studentsById[result.StudentId]
-			sumByGrade[student.Grade] += float64(result.Result)
+		resultsByGrade, ok := objGrades[obj.Id]
+		if !ok {
+			continue
 		}
 
-		res := calculateMean(sumByGrade, func(grade int, sum float64) float64 {
-			return sum / float64(numstudentsByGrade[grade])
-		})
+		var totalSum float64
+		var totalCount int
+		for grade, marks := range resultsByGrade {
+			markSum := numberArrayAction(marks, 0, func(a, b int) int {
+				return a + b
+			})
+			totalSum += float64(markSum)
+			totalCount += len(marks)
 
-		var overallMean float64
-		for _, r := range res {
-			overallMean += r.Mean
-			tbl.AddRow(r.Grade, r.Mean, r.Sum)
+			meanByGrade := float64(markSum) / float64(len(marks))
+			tbl.AddRow(grade, meanByGrade)
 		}
 
-		tbl.AddRow("mean", math.Round(overallMean/3*100)/100)
+		totalMeanByObj := totalSum / float64(totalCount)
+		tbl.AddRow("mean", totalMeanByObj)
 
 		tbl.Print()
-		fmt.Println("-----------")
 	}
 }
 
-type Mean struct {
-	Grade int
-	Mean  float64
-	Sum   float64
+type numbers interface {
+	constraints.Integer | constraints.Float
 }
 
-func calculateMean(sumByGrade map[int]float64, f func(grade int, sum float64) float64) []Mean {
-	var result []Mean
-	for grade, sum := range sumByGrade {
-		mean := f(grade, sum)
-		result = append(result, Mean{
-			Grade: grade,
-			Sum:   sum,
-			Mean:  mean,
-		})
+// reduce
+func numberArrayAction[T numbers](arr []T, init T, f func(T, T) T) T {
+	value := init
+	for _, v := range arr {
+		value = f(value, v)
 	}
-	return result
+	return value
 }
