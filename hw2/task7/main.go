@@ -8,6 +8,12 @@ import (
 
 /* 7. Выведите в консоль круглых отличников из числа студентов, используя функцию Filter.
 Вывод реализуйте как в задаче #3.
+_____________________________________
+Student name  | Grade | Object    |   Result
+____________________________________
+Ann			  |     9 | Math	  |  4
+Ann 		  |     9 | Biology   |  4
+...
 */
 
 func main() {
@@ -27,34 +33,33 @@ func main() {
 		objectsByID[object.Id] = object
 	}
 
+	excellentStudent := make(map[int]struct{}, len(data.Students))
+	notExcellentStudent := make(map[int]struct{}, len(data.Students))
+	for _, result := range data.Results {
+		if result.Result == 5 {
+			if _, ok := notExcellentStudent[result.StudentId]; ok {
+				continue
+			}
+			excellentStudent[result.StudentId] = struct{}{}
+		} else {
+			notExcellentStudent[result.StudentId] = struct{}{}
+			if _, ok := excellentStudent[result.StudentId]; ok {
+				delete(excellentStudent, result.StudentId)
+			}
+		}
+	}
+
 	tbl := table.New("Student name", "Grade", "Object", "Result")
-	tbl.WithHeaderSeparatorRow('-')
-
-	results := excellentStudent(data.Results, func(r readdz.Results) bool {
-		if r.Result == 5 {
-			return true
+	for _, result := range data.Results {
+		student := studentsByID[result.StudentId]
+		if _, ok := excellentStudent[student.Id]; !ok {
+			continue
 		}
-		return false
-	})
 
-	for _, result := range results {
-		row := []any{
-			studentsByID[result.StudentId].Name,
-			studentsByID[result.StudentId].Grade,
-			objectsByID[result.ObjectId].Name,
-			result.Result,
-		}
-		tbl.AddRow(row...)
+		obj := objectsByID[result.ObjectId]
+
+		tbl.AddRow(student.Name, student.Grade, obj.Name, result.Result)
 	}
+
 	tbl.Print()
-}
-
-func excellentStudent(results []readdz.Results, f func(r readdz.Results) bool) []readdz.Results {
-	var out []readdz.Results
-	for _, res := range results {
-		if f(res) {
-			out = append(out, res)
-		}
-	}
-	return out
 }

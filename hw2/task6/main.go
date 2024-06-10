@@ -23,7 +23,7 @@ func main() {
 		studentsById[student.Id] = student
 	}
 
-	// key is a subject id, value is a map which contains grade as a key and assessments as values
+	// key is a subject id, value is a map which contains grade as a key and assessments as a value
 	objGrades := make(map[int]map[int][]int, len(data.Objects))
 	for _, res := range data.Results {
 		if _, ok := objGrades[res.ObjectId]; !ok {
