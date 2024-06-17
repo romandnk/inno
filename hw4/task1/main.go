@@ -2,12 +2,10 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
@@ -17,51 +15,69 @@ import (
 Работа приложения должна завершится при нажатии клавиш ctrl+c с кодом 0. */
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	f, err := openFile()
 	if err != nil {
 		log.Fatal(fmt.Errorf("error opening file: %w", err))
 	}
+	defer f.Close()
 
-	input := make(chan string)
+	input := make(chan string, 1)
+	done := make(chan struct{})
 
 	go func() {
-		<-ctx.Done()
-		close(input)
-		os.Exit(0)
+		<-sigs
+		close(done)
 	}()
 
-	go write(f, input)
-	read(ctx, input)
+	go write(done, f, input)
+
+	read(done, input)
+	close(input)
 }
 
-func read(ctx context.Context, input chan string) {
+func read(done chan struct{}, input chan string) {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	text := make(chan string, 1)
+
 	go func() {
-		defer wg.Done()
+		defer close(text)
 		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			text := scanner.Text()
-			input <- text
+			text <- scanner.Text()
 		}
 	}()
-	wg.Wait()
+
+	for {
+		select {
+		case <-done:
+			return
+		case t, ok := <-text:
+			if !ok {
+				return
+			}
+			input <- t
+		}
+	}
 }
 
-func write(f *os.File, input chan string) {
-	for text := range input {
-		_, err := f.WriteString(text + "\n")
-		if err != nil {
-			log.Printf("error writing to file: %v\n", err)
+func write(done chan struct{}, f *os.File, input chan string) {
+	for {
+		select {
+		case <-done:
+			return
+		case text, ok := <-input:
+			if !ok {
+				return
+			}
+
+			_, err := f.WriteString(text + "\n")
+			if err != nil {
+				log.Printf("error writing to file: %v\n", err)
+				return
+			}
 		}
 	}
 }
