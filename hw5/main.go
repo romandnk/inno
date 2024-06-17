@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 )
@@ -27,7 +28,7 @@ func main() {
 	}
 	defer f.Close()
 
-	input := make(chan string)
+	input := make(chan string, 1)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -44,13 +45,36 @@ func main() {
 }
 
 func read(ctx context.Context, input chan string) {
-	scanner := bufio.NewScanner(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
+
+	text := make(chan string, 1)
+
+	go func() {
+		defer close(text)
+		for {
+			str, err := reader.ReadString('\n')
+			str = strings.TrimRight(str, "\r\n")
+			if err != nil {
+				log.Printf("error reading console: %v\n", err)
+				break
+			}
+			select {
+			case <-ctx.Done():
+				break
+			case text <- str:
+			}
+		}
+	}()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input <- scanner.Text():
+		case str, ok := <-text:
+			if !ok {
+				return
+			}
+			input <- str
 		}
 	}
 }
