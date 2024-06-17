@@ -29,6 +29,7 @@ func main() {
 
 	go func() {
 		<-sigs
+		done <- struct{}{}
 		close(done)
 	}()
 
