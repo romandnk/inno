@@ -14,11 +14,13 @@ import (
 	Вторая функция пишет эти данные в файл. Свяжите эти функции каналом.
 Работа приложения должна завершится при нажатии клавиш ctrl+c с кодом 0. */
 
+const filePath string = "./text.txt"
+
 func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	f, err := openFile()
+	f, err := openFile(filePath)
 	if err != nil {
 		log.Fatal(fmt.Errorf("error opening file: %w", err))
 	}
@@ -29,7 +31,6 @@ func main() {
 
 	go func() {
 		<-sigs
-		done <- struct{}{}
 		close(done)
 	}()
 
@@ -83,6 +84,6 @@ func write(done chan struct{}, f *os.File, input chan string) {
 	}
 }
 
-func openFile() (*os.File, error) {
-	return os.OpenFile("./text.txt", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+func openFile(name string) (*os.File, error) {
+	return os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 }
