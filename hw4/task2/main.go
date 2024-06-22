@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"math/big"
 	"sync"
 )
 
@@ -17,16 +19,18 @@ func main() {
 		arr[i] = i
 	}
 
-	prime, composites := arrSeparationByPrimeAndCompositeNumbers(arr)
+	prime, composites := ArrSeparationByPrimeAndCompositeNumbersWithWorkerPool(arr)
 	fmt.Println("Primes:", prime)
 	fmt.Println("Composites:", composites)
 }
 
-func arrSeparationByPrimeAndCompositeNumbers(arr []int) ([]int, []int) {
+func ArrSeparationByPrimeAndCompositeNumbersWithWorkerPool(arr []int) ([]int, []int) {
 	numbers := make(chan int, len(arr))
 
-	primes := make(chan int, len(arr)/5)   // amount of prime numbers will always be too small in relation to len(arr)
-	composites := make(chan int, len(arr)) // amount of composites numbers will always be less than len(arr)
+	primesCap, compositesCap := calcChanCapacities(len(arr))
+
+	primes := make(chan int, primesCap)
+	composites := make(chan int, compositesCap)
 
 	pool := NewWorkerPool(workerPoolNum, numbers, primes, composites)
 
@@ -41,8 +45,9 @@ func arrSeparationByPrimeAndCompositeNumbers(arr []int) ([]int, []int) {
 		}
 	}()
 
-	primeNumbers := make([]int, 0, len(arr)/5)
-	compositeNumbers := make([]int, 0, len(arr))
+	// so we make allocation on most once
+	primeNumbers := make([]int, 0, primesCap)
+	compositeNumbers := make([]int, 0, compositesCap)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -62,4 +67,63 @@ func arrSeparationByPrimeAndCompositeNumbers(arr []int) ([]int, []int) {
 	wg.Wait()
 
 	return primeNumbers, compositeNumbers
+}
+
+func ArrSeparationByPrimeAndCompositeNumbersWithoutWorkerPool(arr []int) ([]int, []int) {
+	numbers := make(chan int, len(arr))
+
+	primesCap, compositesCap := calcChanCapacities(len(arr))
+
+	primes := make(chan int, primesCap)
+	composites := make(chan int, compositesCap)
+
+	go func() {
+		defer close(numbers)
+		for i := range arr {
+			numbers <- arr[i]
+		}
+	}()
+
+	go func() {
+		for num := range numbers {
+			if big.NewInt(int64(num)).ProbablyPrime(0) {
+				primes <- num
+			} else {
+				composites <- num
+			}
+		}
+		close(primes)
+		close(composites)
+	}()
+
+	// so we make allocation on most once
+	primeNumbers := make([]int, 0, primesCap)
+	compositeNumbers := make([]int, 0, compositesCap)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for num := range primes {
+			primeNumbers = append(primeNumbers, num)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for num := range composites {
+			compositeNumbers = append(compositeNumbers, num)
+		}
+	}()
+	wg.Wait()
+
+	return primeNumbers, compositeNumbers
+}
+
+// calcChanCapacities calculates the amount of prime and composite numbers respectively
+// formula is taken from https://en.wikipedia.org/wiki/Prime_number_theorem
+func calcChanCapacities(amount int) (int, int) {
+	primeAmount := int(math.Ceil(float64(amount) / math.Log(float64(amount))))
+	compositeAmount := amount - primeAmount
+	return primeAmount, compositeAmount
 }
