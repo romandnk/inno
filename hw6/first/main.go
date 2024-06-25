@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 )
@@ -35,7 +36,7 @@ func RunWriter() <-chan map[string]float64 {
 			for key, value := range currentPrice {
 				currentPrice[key] = value + 1
 			}
-			prices <- currentPrice
+			prices <- maps.Clone(currentPrice)
 			time.Sleep(time.Second)
 		}
 		close(prices)
