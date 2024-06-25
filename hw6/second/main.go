@@ -51,7 +51,8 @@ func RunWriter() <-chan *sync.Map {
 				currentPrice.Store(k, price+1)
 				return true
 			})
-			prices <- &currentPrice
+			temp := CopySyncMap(currentPrice)
+			prices <- &temp
 			time.Sleep(time.Second)
 		}
 		close(prices)
@@ -84,4 +85,21 @@ func main() {
 	RunProcessor(&wg, &mu, prices)
 	RunProcessor(&wg, &mu, prices)
 	wg.Wait()
+}
+
+func CopySyncMap(m sync.Map) sync.Map {
+	var cp sync.Map
+
+	m.Range(func(k, v any) bool {
+		vm, ok := v.(sync.Map)
+		if ok {
+			cp.Store(k, CopySyncMap(vm))
+		} else {
+			cp.Store(k, v)
+		}
+
+		return true
+	})
+
+	return cp
 }
