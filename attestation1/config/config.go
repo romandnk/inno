@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	WorkerNum       int    `env:"WORKER_NUM" env-default:"3"`
-	ValidationToken string `env:"VALIDATION_TOKEN" env-default:"secret"`
+	Worker Worker
+	Tokens string `env:"TOKENS" env-default:"secret"`
 }
 
 func New() (Config, error) {
