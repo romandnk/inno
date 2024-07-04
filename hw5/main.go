@@ -30,15 +30,13 @@ func main() {
 
 	input := make(chan string, 1)
 
+	go read(ctx, input)
+
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		write(ctx, f, input)
-	}()
-	go func() {
-		defer wg.Done()
-		read(ctx, input)
 	}()
 	wg.Wait()
 	close(input)
@@ -47,31 +45,15 @@ func main() {
 func read(ctx context.Context, input chan string) {
 	reader := bufio.NewReader(os.Stdin)
 
-	text := make(chan string, 1)
-
-	go func() {
-		defer close(text)
-		for {
-			str, err := reader.ReadString('\n')
-			str = strings.TrimRight(str, "\r\n")
-			if err != nil {
-				log.Printf("error reading console: %v\n", err)
-				break
-			}
-			select {
-			case <-ctx.Done():
-				break
-			case text <- str:
-			}
-		}
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case str, ok := <-text:
-			if !ok {
+		default:
+			str, err := reader.ReadString('\n')
+			str = strings.TrimRight(str, "\r\n")
+			if err != nil {
+				log.Printf("error reading from stdin: %v\n", err)
 				return
 			}
 			input <- str
