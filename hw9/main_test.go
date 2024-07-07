@@ -34,3 +34,14 @@ func BenchmarkMinElImproved(b *testing.B) {
 		MinElImproved(a)
 	}
 }
+
+func BenchmarkMinElGoroutines(b *testing.B) {
+	a := make([]int, 1000)
+	for i := range 1000 {
+		a[i] = i
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		MinElGoroutines(a)
+	}
+}

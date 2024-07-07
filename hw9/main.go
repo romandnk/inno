@@ -1,5 +1,7 @@
 package main
 
+import "sync"
+
 /*
 Распишите ваше решение в отчете. Отчет может быть представлен в любом текстовом формате:
 	* комментарии в коде
@@ -113,9 +115,9 @@ func MinEl2(a []int) int {
 // pkg: inno/hw9
 // BenchmarkMinEl-12                 207692              5640 ns/op               0 B/op          0 allocs/op
 // BenchmarkMinEl2-12                508114              2339 ns/op               0 B/op          0 allocs/op
-// BenchmarkMinElImproved-12         996135              1216 ns/op               0 B/op          0 allocs/op
+// BenchmarkMinElImproved-12         981468              1234 ns/op               0 B/op          0 allocs/op
 
-// сложность алгоритма не изменится
+// при следующем решении скорость увеличивается, но сложность алгоритма не изменится
 
 func MinElImproved(a []int) int {
 	if len(a) == 0 {
@@ -134,13 +136,57 @@ func MinElImproved(a []int) int {
 			}
 		}
 
-		t1 := MinEl2(a[:len(a)/2])
-		t2 := MinEl2(a[len(a)/2:])
+		t1 := MinElImproved(a[:len(a)/2])
+		t2 := MinElImproved(a[len(a)/2:])
+
 		if t1 <= t2 {
 			return t1
 		} else {
 			return t2
 		}
 	}
-	return -1
+
+	return 0
+}
+
+// алгоритм с горутинами только замедляет работу
+// BenchmarkMinElGoroutines-12         1624            698826 ns/op          341481 B/op       6054 allocs/op
+
+func MinElGoroutines(a []int) int {
+	if len(a) == 0 {
+		return 0
+	}
+	if len(a) == 1 {
+		return a[0]
+	}
+
+	t1Chan := make(chan int)
+	t2Chan := make(chan int)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		t1Chan <- MinElGoroutines(a[:len(a)/2])
+	}()
+
+	go func() {
+		defer wg.Done()
+		t2Chan <- MinElGoroutines(a[len(a)/2:])
+	}()
+
+	go func() {
+		wg.Wait()
+		close(t1Chan)
+		close(t2Chan)
+	}()
+
+	t1 := <-t1Chan
+	t2 := <-t2Chan
+
+	if t1 <= t2 {
+		return t1
+	}
+	return t2
 }
