@@ -1,0 +1,9 @@
+worker:
+  num: 4
+  tick: "250ms"
+  retries: 3
+
+token:
+  whiteTokens: ["test1", "test2", "test3"]
+
+shutdownTimeout: "500ms"

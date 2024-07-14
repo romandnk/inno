@@ -1,26 +1,24 @@
 package config
 
 import (
-	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"inno/attestation1/internal/token"
+	"inno/attestation1/internal/worker"
+	"time"
 )
 
 type Config struct {
-	Worker Worker
-	Tokens string `env:"TOKENS" env-default:"secret"`
+	Worker          worker.Config `yaml:"worker"`
+	Token           token.Config  `yaml:"token"`
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout"`
 }
 
-func New() (Config, error) {
+func NewConfig() (Config, error) {
 	var cfg Config
 
-	err := cleanenv.ReadEnv(&cfg)
+	err := cleanenv.ReadConfig("./config/config.yml", &cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("error reading envs: %w", err)
-	}
-
-	err = cleanenv.UpdateEnv(&cfg)
-	if err != nil {
-		return cfg, fmt.Errorf("error updating envs: %w", err)
+		return cfg, err
 	}
 
 	return cfg, nil
