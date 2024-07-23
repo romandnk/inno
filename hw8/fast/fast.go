@@ -19,10 +19,18 @@ const (
 	info level = "INFO"
 )
 
-type Logger struct{}
+type Logger struct {
+	output io.Writer
+}
 
 func NewLogger() *Logger {
-	return &Logger{}
+	return &Logger{
+		output: os.Stdout,
+	}
+}
+
+func (l *Logger) SetOutput(output io.Writer) {
+	l.output = output
 }
 
 func (l Logger) Info(msg string, args ...any) {
@@ -45,6 +53,6 @@ func (l Logger) Info(msg string, args ...any) {
 			builder.WriteString("\n")
 		}
 	}
-	// использую Stderr, чтобы при бенчмарках не печаталось ничего в консоль)
-	io.Copy(os.Stdin, strings.NewReader(builder.String()))
+
+	io.Copy(l.output, strings.NewReader(builder.String()))
 }

@@ -2,14 +2,23 @@ package slow
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 )
 
-type Logger struct{}
+type Logger struct {
+	output io.Writer
+}
 
 func NewLogger() *Logger {
-	return &Logger{}
+	return &Logger{
+		output: os.Stdout,
+	}
+}
+
+func (l *Logger) SetOutput(output io.Writer) {
+	l.output = output
 }
 
 func (l *Logger) Info(msg string, args ...any) {
@@ -19,6 +28,6 @@ func (l *Logger) Info(msg string, args ...any) {
 		strArgs += fmt.Sprintf("%v ", arg)
 	}
 	strArgs = strArgs[0 : len(strArgs)-1]
-	// использую Stdin, чтобы при бенчмарках не печаталось ничего в консоль)
-	fmt.Fprintf(os.Stdin, "INFO | %s | %s | %s\n", now.Format(time.RFC3339), msg, strArgs)
+
+	fmt.Fprintf(l.output, "INFO | %s | %s | %s\n", now.Format(time.RFC3339), msg, strArgs)
 }

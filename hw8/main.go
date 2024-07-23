@@ -24,8 +24,13 @@ type Logger interface {
 // BenchmarkLogger_Info-12          1605933               755.1 ns/op           256 B/op         14 allocs/op
 
 func main() {
-	var s Logger = slow.NewLogger()
-	var f Logger = fast.NewLogger()
-	s.Info("slow", fmt.Sprintf("msg 1"), fmt.Sprintf("msg 2"))
-	f.Info("fast", fmt.Sprintf("msg 1"), fmt.Sprintf("msg 2"))
+	slowLogger := slow.NewLogger()
+	fastLogger := fast.NewLogger()
+
+	// check if loggers implement Logger interface
+	var _ Logger = slowLogger
+	var _ Logger = fastLogger
+
+	slowLogger.Info("slow", fmt.Sprintf("msg 1"), fmt.Sprintf("msg 2"))
+	fastLogger.Info("fast", fmt.Sprintf("msg 1"), fmt.Sprintf("msg 2"))
 }
