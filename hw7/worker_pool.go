@@ -8,8 +8,9 @@ type WorkerPool struct {
 }
 
 type Result struct {
-	Result string
-	Error  error
+	Url   string
+	Data  []byte
+	Error error
 }
 
 func NewWorkerPool(workerNum uint64, jobs chan string) WorkerPool {
