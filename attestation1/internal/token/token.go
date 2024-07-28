@@ -17,9 +17,8 @@ func (t WhiteList) checkToken(tok string) bool {
 	return ok
 }
 
-func (t WhiteList) ValidateToken(msg entity.Message, fn func(msg entity.Message)) {
+func (t WhiteList) ValidateToken(msg entity.Message) {
 	if !t.checkToken(msg.Token) {
 		return
 	}
-	fn(msg)
 }

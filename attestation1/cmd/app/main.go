@@ -20,6 +20,8 @@ import (
 
 const initialCacheSize uint64 = 100
 
+const usersAmount int = 10
+
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -39,8 +41,8 @@ func main() {
 	dir, _ := os.Getwd()
 	// random file ids in range [1, 3]
 	min, max := 1, 3
-	users := make([]entity.Message, 0, 10)
-	for i := 0; i < 8; i++ {
+	users := make([]entity.Message, 0, usersAmount)
+	for i := 0; i < usersAmount; i++ {
 		fileId, _ := url.JoinPath(dir, strconv.Itoa(rand.Intn(max-min+1)+min))
 		users = append(users, entity.Message{
 			Token:  "test1",
@@ -56,8 +58,8 @@ func main() {
 		//close(input)
 	}()
 
-	myWorker := worker.NewWorker(cfg.Worker, cache)
-	go myWorker.Run(ctx)
+	writingWorker := worker.New(cfg.Worker, cache)
+	go writingWorker.Run(ctx)
 
 	for {
 		select {
@@ -65,11 +67,10 @@ func main() {
 			if !ok {
 				return
 			}
-			whileList.ValidateToken(msg, func(msg entity.Message) {
-				cache.Set(ctx, msg.FileID, worker.Data{
-					FileID: msg.FileID,
-					Data:   msg.Data,
-				})
+			whileList.ValidateToken(msg)
+			cache.Set(ctx, msg.FileID, worker.Data{
+				FileID: msg.FileID,
+				Data:   msg.Data,
 			})
 		case <-ctx.Done():
 			time.Sleep(cfg.ShutdownTimeout)
