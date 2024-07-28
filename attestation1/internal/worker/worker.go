@@ -28,7 +28,7 @@ type Worker struct {
 	cache   cache
 }
 
-func NewWorker(cfg Config, cache cache) *Worker {
+func New(cfg Config, cache cache) *Worker {
 	return &Worker{
 		retries: cfg.Retries,
 		num:     cfg.Num,
@@ -39,6 +39,7 @@ func NewWorker(cfg Config, cache cache) *Worker {
 
 func (w *Worker) Run(ctx context.Context) {
 	ticker := time.NewTicker(w.tick)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -60,22 +61,7 @@ func (w *Worker) Run(ctx context.Context) {
 			wg := &sync.WaitGroup{}
 			wg.Add(w.num)
 			for workerNum := range w.num {
-				go func() {
-					defer wg.Done()
-					for msg := range queue {
-						err := w.write(msg.FileID, msg.Data)
-						if err != nil {
-							log.Printf("(worker %d) failed to write message: %v", workerNum, err)
-							for retryNum := range w.retries {
-								err = w.write(msg.FileID, msg.Data)
-								if err == nil {
-									break
-								}
-								log.Printf("(worker %d) (retry %d) failed to write message: %v", workerNum, retryNum, err)
-							}
-						}
-					}
-				}()
+				go w.writeDataFromQueue(wg, queue, workerNum)
 			}
 			wg.Wait()
 			w.cache.Clear(ctx)
@@ -105,4 +91,25 @@ func (w *Worker) write(file string, data string) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (w *Worker) writeDataFromQueue(wg *sync.WaitGroup, queue chan Data, worker int) {
+	defer wg.Done()
+	for msg := range queue {
+		err := w.write(msg.FileID, msg.Data)
+		if err != nil {
+			log.Printf("(worker %d) failed to write message: %v", worker, err)
+			w.doRetry(msg, worker)
+		}
+	}
+}
+
+func (w *Worker) doRetry(data Data, worker int) {
+	for retryNum := range w.retries {
+		err := w.write(data.FileID, data.Data)
+		if err == nil {
+			break
+		}
+		log.Printf("(worker %d) (retry %d) failed to write message: %v", worker, retryNum, err)
+	}
 }

@@ -70,7 +70,7 @@ func (suite *Suite) TestSuccess() {
 		})
 	}
 
-	myWorker := worker.NewWorker(cfg.Worker, cache)
+	myWorker := worker.New(cfg.Worker, cache)
 	go myWorker.Run(ctx)
 
 	time.Sleep(tickTime * 2)
@@ -141,7 +141,7 @@ func (suite *Suite) TestInvalidToken() {
 	// valid messages will be from userId 0, 2, 4, 6, 8
 	suite.Require().Len(cache.All(ctx), 5)
 
-	myWorker := worker.NewWorker(cfg.Worker, cache)
+	myWorker := worker.New(cfg.Worker, cache)
 	go myWorker.Run(ctx)
 
 	time.Sleep(tickTime * 2)
