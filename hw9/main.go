@@ -87,11 +87,12 @@ func MinEl(a []int) int {
 //							 M(n) = 4 * (2 * M(n/8) + 1) + 3 = 8 * M(n/8) + 7
 // 						  3) => M(n) = 2^k * (M(n / 2^k)) + (2^k - 1)
 //                        4) n/2^k = 1 => k = log2(n)
-//                        5) при подстановке k = log2(n) и T(1) = 1 (потому что при n = 1 мы сразу выйдем из функции)
+//                        5) при подстановке k = log2(n) и T(1) = 0 (потому что при n = 1 мы сразу выйдем из функции)
 //                        в уравнение M(n) = 2^k * M(1) + (2^k - 1) мы получим M(n) = n * 1 + (n - 1) = 2n - 1 = n
 // решение или порядок роста: n
 
-// алгоритм 2 будет быстрее на большом количестве данных
+// алгоритм 2 будет быстрее на большом количестве данных, поскольку выполняет меньше операций на каждом уровне рекурсии
+//(разделяет массив пополам вместо того, чтобы уменьшать его на 1 элемент каждый раз)
 
 func MinEl2(a []int) int {
 	// только для первичной проверки
@@ -115,7 +116,7 @@ func MinEl2(a []int) int {
 // pkg: inno/hw9
 // BenchmarkMinEl-12                 207692              5640 ns/op               0 B/op          0 allocs/op
 // BenchmarkMinEl2-12                508114              2339 ns/op               0 B/op          0 allocs/op
-// BenchmarkMinElImproved-12         981468              1234 ns/op               0 B/op          0 allocs/op
+// BenchmarkMinElImproved-12         964018              1267 ns/op               0 B/op          0 allocs/op
 
 // при следующем решении скорость увеличивается, но сложность алгоритма не изменится
 
@@ -127,26 +128,21 @@ func MinElImproved(a []int) int {
 		return a[0]
 	}
 
-	for len(a) > 1 {
-		if len(a) == 2 {
-			if a[0] <= a[1] {
-				return a[0]
-			} else {
-				return a[1]
-			}
-		}
-
-		t1 := MinElImproved(a[:len(a)/2])
-		t2 := MinElImproved(a[len(a)/2:])
-
-		if t1 <= t2 {
-			return t1
+	if len(a) == 2 {
+		if a[0] <= a[1] {
+			return a[0]
 		} else {
-			return t2
+			return a[1]
 		}
 	}
 
-	return 0
+	t1 := MinElImproved(a[:len(a)/2])
+	t2 := MinElImproved(a[len(a)/2:])
+
+	if t1 <= t2 {
+		return t1
+	}
+	return t2
 }
 
 // алгоритм с горутинами только замедляет работу
