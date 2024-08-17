@@ -1,0 +1,18 @@
+POST http://localhost:8081/login
+
+{
+    "username":"qq@qq.qq",
+    "password":"123"
+}
+
+### 
+POST http://localhost:8081/register
+
+{
+    "username":"qq@qq.qq",
+    "password":"123"
+}
+
+#### 
+
+GET http://localhost:8081/build
