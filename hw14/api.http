@@ -1,7 +1,7 @@
 POST http://localhost:8081/login
 
 {
-    "username":"qq@qq.qq",
+    "email":"qq@qq.qq",
     "password":"123"
 }
 
@@ -9,7 +9,7 @@ POST http://localhost:8081/login
 POST http://localhost:8081/register
 
 {
-    "username":"qq@qq.qq",
+    "email":"qq@qq.qq",
     "password":"123"
 }
 

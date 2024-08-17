@@ -2,7 +2,7 @@ package entity
 
 // UserAccount - db schema
 type UserAccount struct {
-	Username  string
+	Email     string
 	Password  string
 	CreatedAt string
 }

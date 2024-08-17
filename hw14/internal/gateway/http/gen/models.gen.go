@@ -35,11 +35,11 @@ type ErrorResponse struct {
 
 // LoginUserRequest defines model for LoginUserRequest.
 type LoginUserRequest struct {
+	// Email Email of the existing user
+	Email string `json:"email"`
+
 	// Password Password of the existing user
 	Password string `json:"password"`
-
-	// Username Username of the existing user
-	Username string `json:"username"`
 }
 
 // LoginUserResponse defines model for LoginUserResponse.
@@ -55,20 +55,20 @@ type LoginUserResponse struct {
 type RegisterUserRequest struct {
 	Age *int `json:"age,omitempty"`
 
+	// Email Email of the new user
+	Email string `json:"email"`
+
 	// Password Password of the new user
 	Password string `json:"password"`
-
-	// Username Username of the new user
-	Username string `json:"username"`
 }
 
 // RegisterUserResponse defines model for RegisterUserResponse.
 type RegisterUserResponse struct {
+	// Email Email of the newly registered user
+	Email string `json:"email"`
+
 	// Id Unique identifier for the registered user
 	Id int `json:"id"`
-
-	// Username Username of the newly registered user
-	Username string `json:"username"`
 }
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.

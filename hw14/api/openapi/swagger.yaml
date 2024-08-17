@@ -92,29 +92,29 @@ components:
     RegisterUserRequest:
       type: object
       properties:
-        username:
+        email:
           type: string
-          description: Username of the new user
+          description: Email of the new user
         password:
           type: string
           description: Password of the new user
         age:
           type: integer
       required:
-        - username
+        - email
         - password
 
     LoginUserRequest:
       type: object
       properties:
-        username:
+        email:
           type: string
-          description: Username of the existing user
+          description: Email of the existing user
         password:
           type: string
           description: Password of the existing user
       required:
-        - username
+        - email
         - password
     
     RegisterUserResponse:
@@ -123,12 +123,12 @@ components:
         id:
           type: integer
           description: Unique identifier for the registered user
-        username:
+        email:
           type: string
-          description: Username of the newly registered user
+          description: Email of the newly registered user
       required:
         - id
-        - username
+        - email
 
     LoginUserResponse:
       type: object
