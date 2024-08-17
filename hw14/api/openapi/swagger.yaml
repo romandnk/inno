@@ -136,8 +136,12 @@ components:
         accessToken:
           type: string
           description: JWT token for accessing protected routes
+        refreshToken:
+          type: string
+          description: JWT token for updating access token
       required:
         - accessToken
+        - refreshToken
     
     BuildInfo:
       type: object

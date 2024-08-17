@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"crypto/rsa"
+	"crypto/ecdsa"
 	"fmt"
 	"time"
 
@@ -25,13 +25,12 @@ type JWTManager struct {
 }
 
 func NewJWTManager(issuer string, expiresIn time.Duration, publicKey, privateKey []byte) (*JWTManager, error) {
-	pubKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
+	pubKey, err := jwt.ParseECPublicKeyFromPEM(publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrKeyParsing, err)
 	}
-	// TODO use Ed algs
 
-	privKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
+	privKey, err := jwt.ParseECPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrKeyParsing, err)
 	}
@@ -44,26 +43,41 @@ func NewJWTManager(issuer string, expiresIn time.Duration, publicKey, privateKey
 	}, nil
 }
 
-func (j *JWTManager) IssueToken(userID string) (string, error) {
+func (j *JWTManager) NewAccessToken(sub string) (string, error) {
 	claims := jwt.MapClaims{
 		"iss": j.issuer,
-		"sub": userID,
+		"sub": sub,
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(j.expiresIn).Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 
-	signed, err := token.SignedString(j.privateKey.(*rsa.PrivateKey))
+	signed, err := token.SignedString(j.privateKey.(*ecdsa.PrivateKey))
 	if err != nil {
 		return "", fmt.Errorf("%w: %s", ErrSigning, err)
 	}
 	return signed, nil
 }
 
-func (j *JWTManager) VerifyToken(tokenString string) (*jwt.Token, error) {
+func (j *JWTManager) NewRefreshToken(sub string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": sub,
+		"exp": time.Now().Add(j.expiresIn).Unix() * 10, // random number, but I am a business and I decide what to do))
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+
+	signed, err := token.SignedString(j.privateKey.(*ecdsa.PrivateKey))
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", ErrSigning, err)
+	}
+	return signed, nil
+}
+
+func (j *JWTManager) VerifyAccessToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, ErrValidation
 		}
 		return j.publicKey, nil

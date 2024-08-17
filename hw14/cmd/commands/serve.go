@@ -107,6 +107,6 @@ func NewServeCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().StringVar(&configPath, "config", "", "path to config")
+	c.Flags().StringVar(&configPath, "config", "config.yaml", "path to config")
 	return c
 }

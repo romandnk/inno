@@ -1,1 +1,5 @@
 .idea
+/hw14/private-key.pem
+/hw14/public-key.pem
+/hw14/db.sql
+/hw14/bin/app

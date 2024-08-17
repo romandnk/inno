@@ -2,6 +2,9 @@ package usecase
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/bogatyr285/auth-go/internal/auth/repository"
 
 	"github.com/bogatyr285/auth-go/internal/auth/entity"
 	"github.com/bogatyr285/auth-go/internal/buildinfo"
@@ -9,8 +12,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var ErrInternalError = errors.New("internal error")
+
 type UserRepository interface {
-	RegisterUser(ctx context.Context, u entity.UserAccount) error
+	RegisterUser(ctx context.Context, u entity.UserAccount) (int, error)
 	FindUserByEmail(ctx context.Context, username string) (entity.UserAccount, error)
 }
 
@@ -20,8 +25,9 @@ type CryptoPassword interface {
 }
 
 type JWTManager interface {
-	IssueToken(userID string) (string, error)
-	VerifyToken(tokenString string) (*jwt.Token, error)
+	NewAccessToken(sub string) (string, error)
+	NewRefreshToken(sub string) (string, error)
+	VerifyAccessToken(tokenString string) (*jwt.Token, error)
 }
 
 type AuthUseCase struct {
@@ -57,13 +63,19 @@ func (u AuthUseCase) PostLogin(ctx context.Context, request gen.PostLoginRequest
 		return gen.PostLogin401JSONResponse{Error: "unauth"}, nil
 	}
 
-	token, err := u.jm.IssueToken(user.Username)
+	accessToken, err := u.jm.NewAccessToken(user.Username)
+	if err != nil {
+		return gen.PostLogin500JSONResponse{}, err
+	}
+
+	refreshToken, err := u.jm.NewRefreshToken(user.Username)
 	if err != nil {
 		return gen.PostLogin500JSONResponse{}, err
 	}
 
 	return gen.PostLogin200JSONResponse{
-		AccessToken: token,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
@@ -73,17 +85,24 @@ func (u AuthUseCase) PostRegister(ctx context.Context, request gen.PostRegisterR
 		return gen.PostRegister500JSONResponse{}, nil
 	}
 
-	// TODO with New method
 	user := entity.UserAccount{
 		Username: request.Body.Username,
 		Password: string(hashedPassword),
 	}
 
-	err = u.ur.RegisterUser(ctx, user)
+	id, err := u.ur.RegisterUser(ctx, user)
 	if err != nil {
-		return gen.PostRegister500JSONResponse{}, nil
+		if errors.Is(err, repository.ErrNicknameAlreadyExists) {
+			return gen.PostRegister400JSONResponse{
+				Error: fmt.Sprintf("username already exists: %s", request.Body.Username),
+			}, nil
+		}
+		return gen.PostRegister500JSONResponse{
+			Error: ErrInternalError.Error(),
+		}, nil
 	}
 	return gen.PostRegister201JSONResponse{
+		Id:       id,
 		Username: request.Body.Username,
 	}, nil
 }
