@@ -71,6 +71,11 @@ type RegisterUserResponse struct {
 	Id int `json:"id"`
 }
 
+// PostLoginParams defines parameters for PostLogin.
+type PostLoginParams struct {
+	UserAgent string `json:"User-Agent"`
+}
+
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginUserRequest
 

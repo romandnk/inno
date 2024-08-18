@@ -60,21 +60,6 @@ func (j *JWTManager) NewAccessToken(sub string) (string, error) {
 	return signed, nil
 }
 
-func (j *JWTManager) NewRefreshToken(sub string) (string, error) {
-	claims := jwt.MapClaims{
-		"sub": sub,
-		"exp": time.Now().Add(j.expiresIn).Unix() * 10, // random number, but I am a business and I decide what to do))
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-
-	signed, err := token.SignedString(j.privateKey.(*ecdsa.PrivateKey))
-	if err != nil {
-		return "", fmt.Errorf("%w: %s", ErrSigning, err)
-	}
-	return signed, nil
-}
-
 func (j *JWTManager) VerifyAccessToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {

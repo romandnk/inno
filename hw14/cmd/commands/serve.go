@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"github.com/bogatyr285/auth-go/internal/auth/repository/sqlite"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/bogatyr285/auth-go/config"
-	"github.com/bogatyr285/auth-go/internal/auth/repository"
 	"github.com/bogatyr285/auth-go/internal/auth/usecase"
 	"github.com/bogatyr285/auth-go/internal/buildinfo"
 	"github.com/bogatyr285/auth-go/internal/gateway/grpc/auth"
@@ -47,7 +47,7 @@ func NewServeCmd() *cobra.Command {
 			// TODO hide creds
 			slog.Info("loaded cfg", slog.Any("cfg", cfg))
 
-			storage, err := repository.New(cfg.Storage.SQLitePath)
+			storage, err := sqlite.New(cfg.Storage.SQLitePath)
 			if err != nil {
 				return err
 			}
@@ -62,7 +62,9 @@ func NewServeCmd() *cobra.Command {
 				return err
 			}
 
-			useCase := usecase.NewUseCase(&storage,
+			useCase := usecase.NewUseCase(
+				storage.User,
+				storage.Token,
 				passwordHasher,
 				jwtManager,
 				buildinfo.New())

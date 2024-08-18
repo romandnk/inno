@@ -37,6 +37,12 @@ paths:
   /login:
     post:
       summary: Login a user
+      parameters:
+        - in: header
+          name: User-Agent
+          schema:
+            type: string
+          required: true
       requestBody:
         required: true
         content:

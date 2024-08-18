@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bogatyr285/auth-go/internal/auth/entity"
-	"github.com/bogatyr285/auth-go/internal/auth/repository"
+	storageerrors "github.com/bogatyr285/auth-go/internal/auth/repository/errors"
 	"github.com/bogatyr285/auth-go/internal/buildinfo"
 	"github.com/bogatyr285/auth-go/internal/gateway/http/gen"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"time"
 )
 
 var ErrInternalError = errors.New("internal error")
@@ -18,6 +20,17 @@ type UserRepository interface {
 	FindUserByEmail(ctx context.Context, email string) (entity.UserAccount, error)
 }
 
+type SaveTokenRequest struct {
+	UserId      int
+	Token       string
+	Fingerprint string
+	ExpiresIn   time.Time
+}
+
+type TokenRepository interface {
+	SaveToken(ctx context.Context, req SaveTokenRequest) error
+}
+
 type CryptoPassword interface {
 	HashPassword(password string) ([]byte, error)
 	ComparePasswords(fromUser, fromDB string) bool
@@ -25,51 +38,64 @@ type CryptoPassword interface {
 
 type JWTManager interface {
 	NewAccessToken(sub string) (string, error)
-	NewRefreshToken(sub string) (string, error)
 	VerifyAccessToken(tokenString string) (*jwt.Token, error)
 }
 
 type AuthUseCase struct {
-	ur UserRepository
-	cp CryptoPassword
-	jm JWTManager
-	bi buildinfo.BuildInfo
+	userRepository  UserRepository
+	tokenRepository TokenRepository
+	cryptoPassword  CryptoPassword
+	jwtManager      JWTManager
+	buildInfo       buildinfo.BuildInfo
 }
 
 func NewUseCase(
-	ur UserRepository,
-	cp CryptoPassword,
-	jm JWTManager,
-	bi buildinfo.BuildInfo,
+	userRepository UserRepository,
+	tokenRepository TokenRepository,
+	cryptoPassword CryptoPassword,
+	jwtManager JWTManager,
+	buildInfo buildinfo.BuildInfo,
 ) AuthUseCase {
 	return AuthUseCase{
-		ur: ur,
-		cp: cp,
-		jm: jm,
-		bi: bi,
+		userRepository:  userRepository,
+		tokenRepository: tokenRepository,
+		cryptoPassword:  cryptoPassword,
+		jwtManager:      jwtManager,
+		buildInfo:       buildInfo,
 	}
 }
 
 func (u AuthUseCase) PostLogin(ctx context.Context, request gen.PostLoginRequestObject) (gen.PostLoginResponseObject, error) {
-	user, err := u.ur.FindUserByEmail(ctx, request.Body.Email)
+	user, err := u.userRepository.FindUserByEmail(ctx, request.Body.Email)
 	if err != nil {
 		return gen.PostLogin500JSONResponse{
 			Error: err.Error(),
 		}, nil
 	}
 
-	if !u.cp.ComparePasswords(user.Password, request.Body.Password) {
+	if !u.cryptoPassword.ComparePasswords(user.Password, request.Body.Password) {
 		return gen.PostLogin401JSONResponse{Error: "unauth"}, nil
 	}
 
-	accessToken, err := u.jm.NewAccessToken(user.Email)
-	if err != nil {
-		return gen.PostLogin500JSONResponse{}, err
+	if request.Params.UserAgent == "" {
+		return gen.PostLogin400JSONResponse{Error: "empty user agent"}, nil
 	}
 
-	refreshToken, err := u.jm.NewRefreshToken(user.Email)
+	accessToken, err := u.jwtManager.NewAccessToken(user.Email)
 	if err != nil {
-		return gen.PostLogin500JSONResponse{}, err
+		return gen.PostLogin500JSONResponse{Error: "error creating access token"}, err
+	}
+
+	refreshToken := uuid.NewString()
+
+	err = u.tokenRepository.SaveToken(ctx, SaveTokenRequest{
+		UserId:      user.Id,
+		Token:       refreshToken,
+		Fingerprint: request.Params.UserAgent,
+		ExpiresIn:   time.Now().UTC().Add(24 * time.Hour),
+	})
+	if err != nil {
+		return gen.PostLogin500JSONResponse{Error: "error saving refresh token"}, err
 	}
 
 	return gen.PostLogin200JSONResponse{
@@ -79,7 +105,7 @@ func (u AuthUseCase) PostLogin(ctx context.Context, request gen.PostLoginRequest
 }
 
 func (u AuthUseCase) PostRegister(ctx context.Context, request gen.PostRegisterRequestObject) (gen.PostRegisterResponseObject, error) {
-	hashedPassword, err := u.cp.HashPassword(request.Body.Password)
+	hashedPassword, err := u.cryptoPassword.HashPassword(request.Body.Password)
 	if err != nil {
 		return gen.PostRegister500JSONResponse{}, nil
 	}
@@ -89,9 +115,9 @@ func (u AuthUseCase) PostRegister(ctx context.Context, request gen.PostRegisterR
 		Password: string(hashedPassword),
 	}
 
-	id, err := u.ur.RegisterUser(ctx, user)
+	id, err := u.userRepository.RegisterUser(ctx, user)
 	if err != nil {
-		if errors.Is(err, repository.ErrNicknameAlreadyExists) {
+		if errors.Is(err, storageerrors.ErrNicknameAlreadyExists) {
 			return gen.PostRegister400JSONResponse{
 				Error: fmt.Sprintf("email already exists: %s", request.Body.Email),
 			}, nil
@@ -108,12 +134,12 @@ func (u AuthUseCase) PostRegister(ctx context.Context, request gen.PostRegisterR
 
 func (u AuthUseCase) GetBuildinfo(ctx context.Context, request gen.GetBuildinfoRequestObject) (gen.GetBuildinfoResponseObject, error) {
 	return gen.GetBuildinfo200JSONResponse{
-		Arch:       u.bi.Arch,
-		BuildDate:  u.bi.BuildDate,
-		CommitHash: u.bi.CommitHash,
-		Compiler:   u.bi.Compiler,
-		GoVersion:  u.bi.GoVersion,
-		Os:         u.bi.OS,
-		Version:    u.bi.Version,
+		Arch:       u.buildInfo.Arch,
+		BuildDate:  u.buildInfo.BuildDate,
+		CommitHash: u.buildInfo.CommitHash,
+		Compiler:   u.buildInfo.Compiler,
+		GoVersion:  u.buildInfo.GoVersion,
+		Os:         u.buildInfo.OS,
+		Version:    u.buildInfo.Version,
 	}, nil
 }

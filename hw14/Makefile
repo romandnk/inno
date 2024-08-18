@@ -16,6 +16,9 @@ build:
 run: build
 	${BUILD_DIR}/${BINARY_NAME} server --config=config.yaml
 
+generate_oapi:
+	go generate ./...
+
 proto:
 	protoc \
 	--go_out=./pkg/server/grpc/auth --go_opt=paths=source_relative \
