@@ -51,6 +51,12 @@ type LoginUserResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+// RefreshTokensRequest defines model for RefreshTokensRequest.
+type RefreshTokensRequest struct {
+	Fingerprint  string `json:"fingerprint"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 // RegisterUserRequest defines model for RegisterUserRequest.
 type RegisterUserRequest struct {
 	Age *int `json:"age,omitempty"`
@@ -78,6 +84,9 @@ type PostLoginParams struct {
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = LoginUserRequest
+
+// PostRefreshTokensJSONRequestBody defines body for PostRefreshTokens for application/json ContentType.
+type PostRefreshTokensJSONRequestBody = RefreshTokensRequest
 
 // PostRegisterJSONRequestBody defines body for PostRegister for application/json ContentType.
 type PostRegisterJSONRequestBody = RegisterUserRequest

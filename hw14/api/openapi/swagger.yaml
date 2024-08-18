@@ -74,6 +74,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /refreshTokens:
+    post:
+      summary: Refresh access and refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokensRequest'
+      responses:
+        '200':
+          description: Tokens successfully refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginUserResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /buildinfo:
     get:
@@ -122,6 +156,17 @@ components:
       required:
         - email
         - password
+
+    RefreshTokensRequest:
+      type: object
+      properties:
+        fingerprint:
+          type: string
+        refreshToken:
+          type: string
+      required:
+        - fingerprint
+        - refreshToken
     
     RegisterUserResponse:
       type: object

@@ -1,11 +1,4 @@
-POST http://localhost:8081/login
-
-{
-    "email":"qq@qq.qq",
-    "password":"123"
-}
-
-### 
+###
 POST http://localhost:8081/register
 
 {
@@ -13,6 +6,27 @@ POST http://localhost:8081/register
     "password":"123"
 }
 
-#### 
+####
+
+###
+POST http://localhost:8081/login
+User-Agent: chrome
+
+{
+    "email":"qq@qq.qq",
+    "password":"123"
+}
+####
+
+###
+POST http://localhost:8081/refreshTokens
+
+{
+    "fingerprint":"chrome",
+    "refreshToken":""
+}
+
+####
+
 
 GET http://localhost:8081/build

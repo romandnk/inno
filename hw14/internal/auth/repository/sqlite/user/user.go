@@ -79,3 +79,20 @@ func (s *SQLLiteUserStorage) FindUserByEmail(ctx context.Context, email string) 
 		Password: pswdFromDB,
 	}, nil
 }
+
+func (s *SQLLiteUserStorage) FindUserById(ctx context.Context, id int) (entity.UserAccount, error) {
+	stmt, err := s.db.PrepareContext(ctx, `SELECT email FROM users WHERE id = ?`)
+	if err != nil {
+		return entity.UserAccount{}, err
+	}
+
+	var userEmail string
+
+	if err := stmt.QueryRow(id).Scan(&userEmail); err != nil {
+		return entity.UserAccount{}, err
+	}
+
+	return entity.UserAccount{
+		Email: userEmail,
+	}, nil
+}

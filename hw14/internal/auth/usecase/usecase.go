@@ -18,6 +18,7 @@ var ErrInternalError = errors.New("internal error")
 type UserRepository interface {
 	RegisterUser(ctx context.Context, u entity.UserAccount) (int, error)
 	FindUserByEmail(ctx context.Context, email string) (entity.UserAccount, error)
+	FindUserById(ctx context.Context, id int) (entity.UserAccount, error)
 }
 
 type SaveTokenRequest struct {
@@ -29,6 +30,8 @@ type SaveTokenRequest struct {
 
 type TokenRepository interface {
 	SaveToken(ctx context.Context, req SaveTokenRequest) error
+	GetToken(ctx context.Context, token string) (entity.Token, error)
+	DeleteToken(ctx context.Context, token string) error
 }
 
 type CryptoPassword interface {
@@ -141,5 +144,55 @@ func (u AuthUseCase) GetBuildinfo(ctx context.Context, request gen.GetBuildinfoR
 		GoVersion:  u.buildInfo.GoVersion,
 		Os:         u.buildInfo.OS,
 		Version:    u.buildInfo.Version,
+	}, nil
+}
+
+func (u AuthUseCase) PostRefreshTokens(ctx context.Context, request gen.PostRefreshTokensRequestObject) (gen.PostRefreshTokensResponseObject, error) {
+	token, err := u.tokenRepository.GetToken(ctx, request.Body.RefreshToken)
+	if err != nil {
+		if errors.Is(err, storageerrors.ErrTokenNotFound) {
+			return gen.PostRefreshTokens401JSONResponse{Error: "refresh token not found"}, nil
+		}
+		return gen.PostRefreshTokens500JSONResponse{Error: "error getting refresh token"}, err
+	}
+
+	if token.Fingerprint != request.Body.Fingerprint {
+		return gen.PostRefreshTokens401JSONResponse{Error: "invalid refresh token"}, nil
+	}
+
+	now := time.Now().UTC()
+	if token.ExpiresIn.Before(now) {
+		return gen.PostRefreshTokens401JSONResponse{Error: "refresh token expired"}, nil
+	}
+
+	user, err := u.userRepository.FindUserById(ctx, token.UserId)
+	if err != nil {
+		return gen.PostRefreshTokens500JSONResponse{Error: "error finding user"}, err
+	}
+
+	accessToken, err := u.jwtManager.NewAccessToken(user.Email)
+	if err != nil {
+		return gen.PostRefreshTokens500JSONResponse{Error: "error creating access token"}, err
+	}
+
+	err = u.tokenRepository.DeleteToken(ctx, request.Body.RefreshToken)
+	if err != nil {
+		return gen.PostRefreshTokens500JSONResponse{Error: "error deleting refresh token"}, err
+	}
+
+	newRefreshToken := uuid.NewString()
+	err = u.tokenRepository.SaveToken(ctx, SaveTokenRequest{
+		UserId:      token.UserId,
+		Token:       newRefreshToken,
+		Fingerprint: request.Body.Fingerprint,
+		ExpiresIn:   time.Now().UTC().Add(24 * time.Hour),
+	})
+	if err != nil {
+		return gen.PostRefreshTokens500JSONResponse{Error: "error saving refresh token"}, err
+	}
+
+	return gen.PostRefreshTokens200JSONResponse{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
 	}, nil
 }
