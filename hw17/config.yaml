@@ -1,0 +1,8 @@
+http_server:
+  address: ":8081"
+  timeout: "2s"
+jwt:
+  issuer: auth-service
+  expires_in: 12h
+  public_key_path: public-key.pem
+  private_key_path: private-key.pem
