@@ -34,5 +34,4 @@ func (h *AuthHandlers) UserInfo(context.Context, *authpb.UserInfoRequest) (*auth
 			},
 		},
 	}, nil
-	//return nil, status.Error(codes.Unimplemented, "")
 }

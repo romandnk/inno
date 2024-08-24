@@ -37,6 +37,12 @@ paths:
   /login:
     post:
       summary: Login a user
+      parameters:
+        - in: header
+          name: User-Agent
+          schema:
+            type: string
+          required: true
       requestBody:
         required: true
         content:
@@ -46,6 +52,40 @@ paths:
       responses:
         '200':
           description: User successfully loggedin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginUserResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /refreshTokens:
+    post:
+      summary: Refresh access and refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokensRequest'
+      responses:
+        '200':
+          description: Tokens successfully refreshed
           content:
             application/json:
               schema:
@@ -92,30 +132,41 @@ components:
     RegisterUserRequest:
       type: object
       properties:
-        username:
+        email:
           type: string
-          description: Username of the new user
+          description: Email of the new user
         password:
           type: string
           description: Password of the new user
         age:
           type: integer
       required:
-        - username
+        - email
         - password
 
     LoginUserRequest:
       type: object
       properties:
-        username:
+        email:
           type: string
-          description: Username of the existing user
+          description: Email of the existing user
         password:
           type: string
           description: Password of the existing user
       required:
-        - username
+        - email
         - password
+
+    RefreshTokensRequest:
+      type: object
+      properties:
+        fingerprint:
+          type: string
+        refreshToken:
+          type: string
+      required:
+        - fingerprint
+        - refreshToken
     
     RegisterUserResponse:
       type: object
@@ -123,12 +174,12 @@ components:
         id:
           type: integer
           description: Unique identifier for the registered user
-        username:
+        email:
           type: string
-          description: Username of the newly registered user
+          description: Email of the newly registered user
       required:
         - id
-        - username
+        - email
 
     LoginUserResponse:
       type: object
@@ -136,8 +187,12 @@ components:
         accessToken:
           type: string
           description: JWT token for accessing protected routes
+        refreshToken:
+          type: string
+          description: JWT token for updating access token
       required:
         - accessToken
+        - refreshToken
     
     BuildInfo:
       type: object
