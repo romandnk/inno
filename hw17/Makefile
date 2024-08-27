@@ -16,6 +16,12 @@ build:
 run: build
 	${BUILD_DIR}/${BINARY_NAME} server --config=config.yaml
 
+test:
+	go test -count=1 -race ./internal/...
+
+test_integration:
+	go test -count=1 -race --tags=integration ./test/...
+
 generate_oapi:
 	go generate ./...
 

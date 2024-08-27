@@ -1,0 +1,10 @@
+http_server:
+  address: "localhost:8081"
+  timeout: "2s"
+jwt:
+  issuer: auth-service
+  expires_in: 12h
+  public_key_path: testdata/public-key.pem
+  private_key_path: testdata/private-key.pem
+storage:
+  path: testdata/db.sql

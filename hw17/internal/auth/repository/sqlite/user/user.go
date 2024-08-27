@@ -28,6 +28,8 @@ func New(db *sql.DB) (*SQLLiteUserStorage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error init table 'users': %w", err)
 	}
+	defer stmt.Close()
+
 	_, err = stmt.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("error create table 'users': %w", err)
