@@ -1,0 +1,487 @@
+definitions:
+  domain.LoginPassword:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      id:
+        type: string
+      is_blocked:
+        type: boolean
+      login:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    type: object
+  domain.UserInfo:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.UserToken:
+    properties:
+      id:
+        type: string
+      token:
+        type: string
+    type: object
+  httphandler.ChangePswReq:
+    properties:
+      password:
+        type: string
+    type: object
+  httphandler.HTTPResponse:
+    properties:
+      data: {}
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  httphandler.ResetUserPasswordReq:
+    properties:
+      user_id:
+        type: string
+    type: object
+  httphandler.SetUserBlockStatusReq:
+    properties:
+      set_block_status:
+        type: boolean
+      user_id:
+        type: string
+    type: object
+  httphandler.SetUserInfoReq:
+    properties:
+      name:
+        type: string
+    type: object
+  httphandler.SetUserRoleReq:
+    properties:
+      role:
+        type: string
+      user_id:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is an auth service.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Auth service API
+  version: "1.0"
+paths:
+  /admin/get_user_info:
+    get:
+      consumes:
+      - application/json
+      description: Allows an admin to retrieve the full information of any user by
+        user ID.
+      parameters:
+      - description: User ID to fetch full information for
+        in: query
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved full user information
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Get Full User Information
+      tags:
+      - admin
+  /admin/reset_user_password:
+    post:
+      consumes:
+      - application/json
+      description: Allows an admin to reset a user's password and retrieve the new
+        password.
+      parameters:
+      - description: User password reset request
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/httphandler.ResetUserPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully reset the user's password
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Reset User Password
+      tags:
+      - admin
+  /admin/set_user_block_status:
+    post:
+      consumes:
+      - application/json
+      description: Allows an admin to block or unblock a user by setting the user's
+        block status.
+      parameters:
+      - description: User block/unblock status request
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/httphandler.SetUserBlockStatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully changed the user's block status
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "409":
+          description: User already in desired block/unblock status
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Set User Block/Unblock Status
+      tags:
+      - admin
+  /admin/set_user_role:
+    post:
+      consumes:
+      - application/json
+      description: Allows an admin to set the role of a user.
+      parameters:
+      - description: User role change request
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/httphandler.SetUserRoleReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully changed the user's role
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "409":
+          description: User already has the specified role
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Set User Role
+      tags:
+      - admin
+  /change_psw:
+    put:
+      consumes:
+      - application/json
+      description: Changes the user's password based on the provided user ID and new
+        password.
+      parameters:
+      - description: User ID
+        in: header
+        name: User-ID
+        required: true
+        type: string
+      - description: New password information
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/httphandler.ChangePswReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password successfully changed
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Change User Password
+      tags:
+      - user
+  /get_user_info:
+    get:
+      description: Retrieves short information about a user based on the provided
+        user ID.
+      parameters:
+      - description: User ID
+        in: header
+        name: User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved user information
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.UserInfo'
+              type: object
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Get User Information
+      tags:
+      - user
+  /set_user_info:
+    put:
+      consumes:
+      - application/json
+      description: Updates user information such as name based on the provided user
+        ID.
+      parameters:
+      - description: User ID
+        in: header
+        name: User-ID
+        required: true
+        type: string
+      - description: User information to update
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/httphandler.SetUserInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated user information
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Update User Information
+      tags:
+      - user
+  /sign_in:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user using login and password, returning a JWT
+        token upon success.
+      parameters:
+      - description: User login and password
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login, JWT token
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.UserToken'
+              type: object
+        "400":
+          description: Invalid login or password
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: User Login
+      tags:
+      - authentication
+  /sign_up:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with a login and password.
+      parameters:
+      - description: User login and password
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful registration, JWT token
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.UserToken'
+              type: object
+        "400":
+          description: Invalid registration data
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "409":
+          description: User input data error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "422":
+          description: Request body validation error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: User Registration
+      tags:
+      - authentication
+  /v2/get_user_info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves user information based on the role of the requesting
+        user. Admins can get full info for any user, while regular users can only
+        access their own short info.
+      parameters:
+      - description: User ID to fetch information for
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Author User ID (the requester)
+        in: header
+        name: User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Short information for regular users
+          schema:
+            allOf:
+            - $ref: '#/definitions/httphandler.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.UserInfo'
+              type: object
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "403":
+          description: 'Forbidden: Regular user cannot access other user''s info'
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/httphandler.HTTPResponse'
+      summary: Get User Information (Version 2)
+      tags:
+      - user
+swagger: "2.0"

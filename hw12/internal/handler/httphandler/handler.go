@@ -1,15 +1,25 @@
 package httphandler
 
 import (
+	_ "authservice/docs"
 	"authservice/internal/domain"
 	"authservice/internal/service"
 	"errors"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 )
 
+//	@title			Auth service API
+//	@version		1.0
+//	@description	This is an auth service.
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 func NewRouter() *http.ServeMux {
 	router := http.NewServeMux()
+	router.Handle("/swagger/*", httpSwagger.Handler())
+
 	router.Handle("/sign_up", CORS(LogUser(http.HandlerFunc(SignUp))))
 	router.Handle("/sign_in", CORS(LogUser(http.HandlerFunc(SignIn))))
 
@@ -27,6 +37,21 @@ func NewRouter() *http.ServeMux {
 	return router
 }
 
+// GetUserInfoV2 godoc
+//	@Summary		Get User Information (Version 2)
+//	@Description	Retrieves user information based on the role of the requesting user. Admins can get full info for any user, while regular users can only access their own short info.
+//	@Tags			user
+//	@Accept			json
+//	@Produce		json
+//	@Param			user_id	query		string								true	"User ID to fetch information for"
+//	@Param			User-ID	header		string								true	"Author User ID (the requester)"
+//	@Success		200		{object}	HTTPResponse{data=domain.User}		"Full information for admins"
+//	@Success		200		{object}	HTTPResponse{data=domain.UserInfo}	"Short information for regular users"
+//	@Failure		400		{object}	HTTPResponse						"Invalid user ID format"
+//	@Failure		403		{object}	HTTPResponse						"Forbidden: Regular user cannot access other user's info"
+//	@Failure		404		{object}	HTTPResponse						"User not found"
+//	@Failure		500		{object}	HTTPResponse						"Internal server error"
+//	@Router			/v2/get_user_info [get]
 func GetUserInfoV2(resp http.ResponseWriter, req *http.Request) {
 
 	respBody := &HTTPResponse{}

@@ -3,3 +3,6 @@ run:
 
 clear-data:
 	rm -rf tokens.json users.json
+
+gen_docs:
+	swag init -g internal/handler/httphandler/handler.go
