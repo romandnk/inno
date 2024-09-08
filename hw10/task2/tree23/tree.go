@@ -83,6 +83,8 @@ func (t *Tree) splitRoot() {
 	}
 
 	t.root = &Node{vals: []int{midVal}, children: []*Node{left, right}}
+	left.parent = t.root
+	right.parent = t.root
 }
 
 func (t *Tree) Search(val int) *Node {
