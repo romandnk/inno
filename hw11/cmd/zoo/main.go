@@ -2,7 +2,7 @@ package main
 
 import (
 	"go.uber.org/fx"
-	"inno/hw11/internal/app"
+	"zoo/internal/app"
 )
 
 func main() {

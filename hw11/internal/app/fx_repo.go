@@ -2,13 +2,13 @@ package app
 
 import (
 	"go.uber.org/fx"
-	"zoo/config"
+	"zoo/internal/repository"
 )
 
-func ConfigModule() fx.Option {
+func RepoModule() fx.Option {
 	return fx.Options(
 		fx.Provide(
-			config.New,
+			repository.New,
 		),
 	)
 }

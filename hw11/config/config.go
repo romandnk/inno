@@ -3,17 +3,19 @@ package config
 import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
-	httpserver "inno/hw11/pkg/server/http"
 	"time"
+	httpserver "zoo/pkg/server/http"
+	"zoo/pkg/storage/postgres"
 )
 
 type Config struct {
 	RequestPerUser  int           `env:"REQUEST_PER_USER" env-default:"3"`
 	RateLimitWindow time.Duration `env:"RATE_WINDOW" env-default:"10s"`
 	HTTPServer      httpserver.Config
+	Postgres        postgres.Config
 }
 
-func NewConfig() (Config, error) {
+func New() (Config, error) {
 	var cfg Config
 
 	err := cleanenv.ReadEnv(&cfg)

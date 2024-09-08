@@ -2,47 +2,54 @@ package animal
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/jackc/pgx/v5"
 	"net/http"
+	"zoo/internal/repository"
 )
 
-type Auth struct {
-	animals map[string]int
+type Animal struct {
+	repo repository.Animal
 }
 
-func New() *Auth {
-	return &Auth{
-		animals: map[string]int{
-			"elephants":  5,
-			"monkeys":    3,
-			"crocodiles": 6,
-		},
+func New(repo repository.Animal) *Animal {
+	return &Animal{
+		repo: repo,
 	}
 }
 
-func (a *Auth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+type response struct {
+	Animal string `json:"animal"`
+	Amount int    `json:"amount"`
+}
+
+func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 
-	animal := r.PathValue("animal")
+	name := r.PathValue("animal")
 
-	amount, ok := a.animals[animal]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
+	animal, err := a.repo.GetAnimal(r.Context(), name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"error": "animal not found"}`))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
 		return
 	}
 
-	response := struct {
-		Animal string `json:"animal"`
-		Amount int    `json:"amount"`
-	}{
-		Animal: animal,
-		Amount: amount,
+	resp := response{
+		Animal: animal.Name,
+		Amount: animal.Amount,
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(&resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
