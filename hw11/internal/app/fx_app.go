@@ -7,6 +7,7 @@ func NewApp() fx.Option {
 		ConfigModule(),
 		DBModule(),
 		RepoModule(),
+		CacheModule(),
 		HTTPHandlerModule(),
 		HTTPServerModule(),
 	)

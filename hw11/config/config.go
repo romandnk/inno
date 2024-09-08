@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	RequestPerUser  int           `env:"REQUEST_PER_USER" env-default:"3"`
-	RateLimitWindow time.Duration `env:"RATE_WINDOW" env-default:"10s"`
+	RequestPerUser  int           `env:"REQUEST_PER_USER" env-default:"100"`
+	RateLimitWindow time.Duration `env:"RATE_WINDOW" env-default:"1s"`
 	HTTPServer      httpserver.Config
 	Postgres        postgres.Config
 }

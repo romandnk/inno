@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 	"time"
+	"zoo/internal/cache"
 	"zoo/internal/http/v1/animal"
 	ratelimiter "zoo/internal/http/v1/middleware/rate_limiter"
 	"zoo/internal/repository"
@@ -13,13 +14,15 @@ type Handler struct {
 	requestNumPerUser int
 	rateLimitWindow   time.Duration
 	repo              *repository.Repository
+	cache             cache.Cache
 }
 
-func NewHandler(requestNumPerUser int, rateLimitWindow time.Duration, repo *repository.Repository) Handler {
+func NewHandler(requestNumPerUser int, rateLimitWindow time.Duration, repo *repository.Repository, cache cache.Cache) Handler {
 	return Handler{
 		requestNumPerUser: requestNumPerUser,
 		rateLimitWindow:   rateLimitWindow,
 		repo:              repo,
+		cache:             cache,
 	}
 }
 
@@ -28,6 +31,6 @@ func (h *Handler) InitRoutes() *http.ServeMux {
 
 	rateLimiter := ratelimiter.NewIPRateLimiter(h.requestNumPerUser, h.rateLimitWindow)
 
-	h.mux.Handle("/animals/{animal}", rateLimiter.RateLimiter(animal.New(h.repo.Animal)))
+	h.mux.Handle("/animals/{animal}", rateLimiter.RateLimiter(animal.New(h.repo.Animal, h.cache)))
 	return h.mux
 }
