@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"zoo/internal/cache"
 	"zoo/internal/entity"
@@ -30,6 +31,10 @@ type response struct {
 }
 
 func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Создание контекста и span для всего обработчика
+	span := trace.SpanFromContext(r.Context())
+	defer span.End()
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -40,23 +45,26 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var animal entity.Animal
 
+	span.AddEvent("try to get animal from cache")
 	res, err := a.cache.Get(name)
 	if err != nil && !errors.Is(err, inmem.ErrNotFound) {
+		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
 		return
 	}
 	if res != nil {
-		fmt.Println("get from cache")
 		var ok bool
 		animal, ok = res.(entity.Animal)
 		if !ok {
+			err = fmt.Errorf("data from cache is not entity.Animal")
+			span.RecordError(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
 			return
 		}
 	} else {
-		fmt.Println("get from db")
+		span.AddEvent("get animal from db")
 		animal, err = a.repo.GetAnimal(r.Context(), name)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -64,6 +72,7 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`{"error": "animal not found"}`))
 				return
 			}
+			span.RecordError(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("error: %s", err.Error())))
 			return
@@ -80,6 +89,7 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(&resp)
 	if err != nil {
+		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

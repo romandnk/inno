@@ -16,18 +16,15 @@ func HTTPHandlerModule() fx.Option {
 			func(cfg config.Config) (int, time.Duration) {
 				return cfg.RequestPerUser, cfg.RateLimitWindow
 			},
-			fx.Annotate(
-				func(requestNumPerUser int, rateLimitWindow time.Duration, repo *repository.Repository, cache cache.Cache) *http.ServeMux {
-					handler := v1.NewHandler(
-						requestNumPerUser,
-						rateLimitWindow,
-						repo,
-						cache,
-					)
-					return handler.InitRoutes()
-				},
-				fx.As(new(http.Handler)),
-			),
+			func(requestNumPerUser int, rateLimitWindow time.Duration, repo *repository.Repository, cache cache.Cache) http.Handler {
+				handler := v1.NewHandler(
+					requestNumPerUser,
+					rateLimitWindow,
+					repo,
+					cache,
+				)
+				return handler.InitRoutes()
+			},
 		),
 	)
 }
