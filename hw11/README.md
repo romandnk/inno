@@ -4,3 +4,6 @@
 ## Трассировка
 ![jaeger](./assets/jaeger.png)
 
+## Метрики
+![cache](./assets/cache_hit.png)
+![cpu](./assets/process_cpu.png)

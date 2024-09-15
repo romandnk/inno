@@ -13,9 +13,6 @@ func TracingModule() fx.Option {
 			func(cfg config.Config) tracing.Config {
 				return cfg.Tracer
 			},
-			func() context.Context {
-				return context.Background()
-			},
 		),
 		fx.Provide(
 			tracing.NewTracerProvider,

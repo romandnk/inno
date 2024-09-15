@@ -2,6 +2,7 @@ package v1
 
 import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"time"
@@ -37,10 +38,12 @@ func NewHandler(
 func (h *Handler) InitRoutes() http.Handler {
 	h.mux = http.NewServeMux()
 
+	meter := otel.Meter("Animals")
+
 	rateLimiter := ratelimiter.NewIPRateLimiter(h.requestNumPerUser, h.rateLimitWindow)
 
 	h.mux.Handle("/animals/{animal}", otelhttp.NewHandler(
-		rateLimiter.RateLimiter(animal.New(h.repo.Animal, h.cache)),
+		rateLimiter.RateLimiter(animal.New(h.repo.Animal, h.cache, meter)),
 		"GET /animals",
 	))
 

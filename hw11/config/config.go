@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"time"
+	"zoo/pkg/opentelemetry/metrics"
 	"zoo/pkg/opentelemetry/tracing"
 	httpserver "zoo/pkg/server/http"
 	"zoo/pkg/storage/postgres"
@@ -15,6 +16,7 @@ type Config struct {
 	HTTPServer      httpserver.Config
 	Postgres        postgres.Config
 	Tracer          tracing.Config
+	Metrics         metrics.Config
 }
 
 func New() (Config, error) {

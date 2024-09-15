@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"zoo/internal/cache"
@@ -16,12 +17,14 @@ import (
 type Animal struct {
 	repo  repository.Animal
 	cache cache.Cache
+	meter metric.Meter
 }
 
-func New(repo repository.Animal, cache cache.Cache) *Animal {
+func New(repo repository.Animal, cache cache.Cache, meter metric.Meter) *Animal {
 	return &Animal{
 		repo:  repo,
 		cache: cache,
+		meter: meter,
 	}
 }
 
@@ -45,6 +48,15 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var animal entity.Animal
 
+	cacheMiss, err := a.meter.Int64Counter("cache_miss")
+	if err != nil {
+		fmt.Printf("error creating cache.miss counter: %s\n", err.Error())
+	}
+	cacheHit, err := a.meter.Int64Counter("cache_hit")
+	if err != nil {
+		fmt.Printf("error creating cache.hit counter: %s\n", err.Error())
+	}
+
 	span.AddEvent("try to get animal from cache")
 	res, err := a.cache.Get(name)
 	if err != nil && !errors.Is(err, inmem.ErrNotFound) {
@@ -54,6 +66,7 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if res != nil {
+		cacheHit.Add(r.Context(), 1)
 		var ok bool
 		animal, ok = res.(entity.Animal)
 		if !ok {
@@ -78,6 +91,7 @@ func (a *Animal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		cacheMiss.Add(r.Context(), 1)
 		go func() {
 			_ = a.cache.Set(name, animal)
 		}()

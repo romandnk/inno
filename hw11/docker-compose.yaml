@@ -54,8 +54,12 @@ services:
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
+    command: [
+      "--config.file=/prometheus.yml",
+      "--web.listen-address=:9090"
+    ]
     volumes:
-      - ./prometheus/prometheus.yml:/prometheus.yml
+      - ./prometheus.yml:/prometheus.yml
     ports:
       - "9090:9090"
 
@@ -67,6 +71,7 @@ services:
       - ./otel-collector.yml:/etc/otel-collector.yml
     ports:
       - "4317:4317"
+      - "8889:8889"
     depends_on:
       - jaeger
       - prometheus
