@@ -59,6 +59,19 @@ func (n *Node) deleteFromLeaf(val int) {
 			break
 		}
 	}
+
+	if len(n.vals) == 0 && n.parent != nil {
+		n.parent.removeChild(n)
+	}
+}
+
+func (n *Node) removeChild(child *Node) {
+	for i, c := range n.children {
+		if c == child {
+			n.children = append(n.children[:i], n.children[i+1:]...)
+			break
+		}
+	}
 }
 
 func (n *Node) hasVal(val int) bool {
