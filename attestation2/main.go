@@ -20,6 +20,7 @@ func EvalSequence(matrix [][]int, userAnswer []int) (int, error) {
 	maxGrade := calMaxGrade(matrix)
 	userGrade := calcUserGrade(matrix, userAnswer)
 
+	// max grade cannot be less than zero because we have checked it in validateMatrix function
 	percent := userGrade * 100 / maxGrade
 
 	return percent, nil
@@ -31,6 +32,8 @@ func validateMatrix(matrix [][]int) error {
 		return errors.New("matrix is empty")
 	}
 
+	isPathsEmpty := false
+
 	for i := range n {
 		if len(matrix[i]) != n {
 			return errors.New("matrix is not square")
@@ -39,11 +42,20 @@ func validateMatrix(matrix [][]int) error {
 			return errors.New("matrix has loop")
 		}
 		for j := 0; j < n; j++ {
-			if matrix[i][j] != matrix[j][i] {
-				return errors.New("matrix is not symmetric")
+			value := matrix[i][j]
+			if value < 0 {
+				return errors.New("matrix has a negative value")
+			}
+			if value > 0 {
+				isPathsEmpty = true
 			}
 		}
 	}
+
+	if !isPathsEmpty {
+		return errors.New("paths are empty")
+	}
+
 	return nil
 }
 
@@ -54,6 +66,11 @@ func ValidateUserAnswers(matrix [][]int, userAnswer []int) error {
 		return nil
 	}
 
+	err := validateAnswerRange(userAnswer[0], m)
+	if err != nil {
+		return err
+	}
+
 	exist := make(map[int]struct{})
 	exist[userAnswer[0]] = struct{}{}
 
@@ -61,14 +78,23 @@ func ValidateUserAnswers(matrix [][]int, userAnswer []int) error {
 		if _, ok := exist[userAnswer[i]]; ok {
 			return fmt.Errorf("answer is duplicated: %d", userAnswer[i])
 		}
-		if userAnswer[i] >= m || userAnswer[i] < 0 {
-			return fmt.Errorf("invalid answer: %d", userAnswer[i])
+		err := validateAnswerRange(userAnswer[i], m)
+		if err != nil {
+			return err
 		}
 		exist[userAnswer[i]] = struct{}{}
 	}
 
 	return nil
 }
+
+func validateAnswerRange(answer, maxAnswer int) error {
+	if answer >= maxAnswer || answer < 0 {
+		return fmt.Errorf("invalid answer: %d", answer)
+	}
+	return nil
+}
+
 func calcUserGrade(matrix [][]int, userAnswer []int) int {
 	if len(userAnswer) == 0 {
 		return 0

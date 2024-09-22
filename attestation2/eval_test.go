@@ -11,16 +11,17 @@ func TestEvalSequence(t *testing.T) {
 		ua  []int
 	}
 
-	// 0 -(2)- 1 -(1)- 3
-	// |         \
-	//(3)         (1)
-	// |            \
-	// 2             4
+	//  0 ← (2) ← 1 → (1) → 3
+	//  ↓         ↑
+	// (3)       (1)
+	//  ↓         ↑
+	//  2         4
+
 	mtx1 := [][]int{
-		{0, 2, 3, 0, 0},
-		{2, 0, 0, 1, 1},
-		{3, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0},
+		{0, 0, 3, 0, 0},
+		{2, 0, 0, 1, 0},
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0},
 		{0, 1, 0, 0, 0},
 	}
 
@@ -71,6 +72,22 @@ func TestEvalSequence(t *testing.T) {
 			want: 50,
 		},
 		{
+			name: "mtx 5 verticals 0%",
+			args: args{
+				mtx: mtx1,
+				ua:  []int{3},
+			},
+			want: 0,
+		},
+		{
+			name: "mtx 5 verticals 16%",
+			args: args{
+				mtx: mtx1,
+				ua:  []int{1, 3},
+			},
+			want: 16,
+		},
+		{
 			name: "matrix has loop",
 			args: args{
 				mtx: [][]int{
@@ -86,6 +103,21 @@ func TestEvalSequence(t *testing.T) {
 			expectedErr: "matrix has loop",
 		},
 		{
+			name: "paths are empty",
+			args: args{
+				mtx: [][]int{
+					{0, 0, 0, 0, 0},
+					{0, 0, 0, 0, 0},
+					{0, 0, 0, 0, 0},
+					{0, 0, 0, 0, 0},
+					{0, 0, 0, 0, 0},
+				},
+				ua: []int{4, 1, 0},
+			},
+			want:        0,
+			expectedErr: "paths are empty",
+		},
+		{
 			name: "matrix is empty",
 			args: args{
 				mtx: [][]int{},
@@ -95,7 +127,22 @@ func TestEvalSequence(t *testing.T) {
 			expectedErr: "matrix is empty",
 		},
 		{
-			name: "matrix is not symmetric",
+			name: "matrix has negative value",
+			args: args{
+				mtx: [][]int{
+					{0, 2, 3, 0, 0},
+					{2, 0, 0, 1, 1},
+					{3, 0, 0, 0, 0},
+					{0, 1, 0, 0, -1},
+					{0, 1, 0, -1, 0},
+				},
+				ua: []int{4, 1, 0},
+			},
+			want:        0,
+			expectedErr: "matrix has a negative value",
+		},
+		{
+			name: "matrix is not square",
 			args: args{
 				mtx: [][]int{
 					{0, 2, 3, 0, 0},
@@ -107,21 +154,6 @@ func TestEvalSequence(t *testing.T) {
 			},
 			want:        0,
 			expectedErr: "matrix is not square",
-		},
-		{
-			name: "matrix is not symmetric",
-			args: args{
-				mtx: [][]int{
-					{0, 2, 3, 0, 0},
-					{2, 0, 0, 1, 1},
-					{3, 0, 0, 0, 0},
-					{0, 1, 0, 0, 0},
-					{1, 1, 0, 0, 0},
-				},
-				ua: []int{4, 1, 0},
-			},
-			want:        0,
-			expectedErr: "matrix is not symmetric",
 		},
 		{
 			name: "duplicated answer",
@@ -167,6 +199,15 @@ func TestEvalSequence(t *testing.T) {
 			},
 			want:        0,
 			expectedErr: "invalid answer: 6",
+		},
+		{
+			name: "first element is out of range",
+			args: args{
+				mtx: mtx1,
+				ua:  []int{8, 1, 2, 3, 4},
+			},
+			want:        0,
+			expectedErr: "invalid answer: 8",
 		},
 	}
 	for _, tt := range tests {
