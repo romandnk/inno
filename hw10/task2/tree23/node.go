@@ -1,5 +1,9 @@
 package tree23
 
+import (
+	"sort"
+)
+
 type Node struct {
 	vals     []int
 	parent   *Node
@@ -16,25 +20,14 @@ func (n *Node) insertVal(val int) {
 }
 
 func (n *Node) sortVals() {
-	if len(n.vals) < 2 {
-		return
-	}
-
-	if n.vals[0] > n.vals[1] {
-		n.vals[1], n.vals[0] = n.vals[0], n.vals[1]
-	}
-
-	if len(n.vals) == 3 {
-		if n.vals[2] < n.vals[1] {
-			n.vals[1], n.vals[2] = n.vals[2], n.vals[1]
-		}
-		if n.vals[0] > n.vals[1] {
-			n.vals[1], n.vals[0] = n.vals[0], n.vals[1]
-		}
-	}
+	sort.Ints(n.vals)
 }
 
 func (n *Node) findChild(val int) *Node {
+	if n.isLeaf() {
+		return nil
+	}
+
 	for i, v := range n.vals {
 		if val < v {
 			return n.children[i]
@@ -87,6 +80,7 @@ func (n *Node) replaceVal(old, new int) {
 	for i, v := range n.vals {
 		if v == old {
 			n.vals[i] = new
+			n.sortVals()
 			return
 		}
 	}

@@ -115,9 +115,14 @@ func (t *Tree) Delete(val int) {
 		return
 	}
 	t.deleteVal(t.root, val)
+
 	if len(t.root.vals) == 0 && len(t.root.children) > 0 {
 		t.root = t.root.children[0]
 		t.root.parent = nil
+	}
+
+	if len(t.root.vals) == 0 && len(t.root.children) == 0 {
+		t.root = nil
 	}
 }
 
