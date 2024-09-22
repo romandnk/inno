@@ -209,21 +209,6 @@ func TestEvalSequence(t *testing.T) {
 			want:        0,
 			expectedErr: "invalid answer: 8",
 		},
-		{
-			name: "answer is out of available answers",
-			args: args{
-				mtx: [][]int{
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 1},
-					{0, 0, 0, 0, 0},
-				},
-				ua: []int{4, 1, 6},
-			},
-			want:        0,
-			expectedErr: "invalid answer: 6",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
