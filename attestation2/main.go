@@ -66,32 +66,18 @@ func ValidateUserAnswers(matrix [][]int, userAnswer []int) error {
 		return nil
 	}
 
-	err := validateAnswerRange(userAnswer[0], m)
-	if err != nil {
-		return err
-	}
-
 	exist := make(map[int]struct{})
-	exist[userAnswer[0]] = struct{}{}
 
-	for i := 1; i < n; i++ {
+	for i := 0; i < n; i++ {
 		if _, ok := exist[userAnswer[i]]; ok {
 			return fmt.Errorf("answer is duplicated: %d", userAnswer[i])
 		}
-		err := validateAnswerRange(userAnswer[i], m)
-		if err != nil {
-			return err
+		if userAnswer[i] >= m || userAnswer[i] < 0 {
+			return fmt.Errorf("invalid answer: %d", userAnswer[i])
 		}
 		exist[userAnswer[i]] = struct{}{}
 	}
 
-	return nil
-}
-
-func validateAnswerRange(answer, maxAnswer int) error {
-	if answer >= maxAnswer || answer < 0 {
-		return fmt.Errorf("invalid answer: %d", answer)
-	}
 	return nil
 }
 
