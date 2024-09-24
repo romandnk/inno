@@ -66,7 +66,10 @@ func main() {
 				log.Fatalf("error creating chat: %v", err)
 			}
 		case "2":
-			//enterChat()
+			err = enterChat(cl)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 		case "exit":
 			fmt.Println("Выход...")
 			return

@@ -20,31 +20,33 @@ func createNewChat(cl *client) error {
 			return nil
 		}
 
-		if userID != "" {
-			req, err := newCreateChatReq(userID)
-			if err != nil {
-				return fmt.Errorf("error creating new chat request: %v", err)
-			}
-
-			err = cl.WriteJSON(req)
-			if err != nil {
-				return err
-			}
-
-			var resp domain.Delivery
-			err = cl.ReadJSON(&resp)
-			if err != nil {
-				return err
-			}
-			if resp.Type != domain.DeliveryTypeNewChat {
-				return fmt.Errorf("invalid response type: %v", resp.Type)
-			}
-
-			fmt.Printf("Новый чат: %s\n\n", resp.Data.(string))
-			return nil
-		} else {
+		if userID == "" {
 			fmt.Println("ID пользователя не может быть пустым, попробуйте снова.")
+			continue
 		}
+
+		req, err := newCreateChatReq(userID)
+		if err != nil {
+			return fmt.Errorf("error creating new chat request: %v", err)
+		}
+
+		err = cl.WriteJSON(req)
+		if err != nil {
+			return err
+		}
+
+		var resp domain.Delivery
+		err = cl.ReadJSON(&resp)
+		if err != nil {
+			return err
+		}
+		if resp.Type != domain.DeliveryTypeNewChat {
+			return fmt.Errorf("invalid response type: %v", resp.Type)
+		}
+
+		fmt.Printf("Новый чат: %s\n\n", resp.Data.(string))
+
+		return nil
 	}
 }
 
