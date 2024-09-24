@@ -49,32 +49,45 @@ func main() {
 	}
 	defer cl.Close()
 
+	reader := bufio.NewReader(os.Stdin)
+	choices := make(chan string)
+	defer close(choices)
+
 	for {
 		fmt.Println("Меню:")
 		fmt.Println("1. Создать новый чат с другим пользователем")
 		fmt.Println("2. Войти в чат с пользователем")
 		fmt.Println("Введите ваш выбор (для выхода введите 'exit' или нажмите Ctrl+C):")
 
-		reader := bufio.NewReader(os.Stdin)
-		choice, _ := reader.ReadString('\n')
-		choice = strings.TrimSpace(choice)
+		go func() {
+			choice, _ := reader.ReadString('\n')
+			choices <- strings.TrimSpace(choice)
+		}()
 
-		switch choice {
-		case "1":
-			err = createNewChat(cl)
-			if err != nil {
-				log.Fatalf("error creating chat: %v", err)
-			}
-		case "2":
-			err = enterChat(cl)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-		case "exit":
-			fmt.Println("Выход...")
+		select {
+		case <-ctx.Done():
 			return
-		default:
-			fmt.Println("Неверный выбор, попробуйте снова.")
+		case choice, ok := <-choices:
+			if !ok {
+				return
+			}
+			switch choice {
+			case "1":
+				err = createNewChat(cl)
+				if err != nil {
+					log.Fatalf("error creating chat: %v", err)
+				}
+			case "2":
+				err = enterChat(ctx, cl)
+				if err != nil {
+					log.Fatal(err.Error())
+				}
+			case "exit":
+				fmt.Println("Выход...")
+				return
+			default:
+				fmt.Println("Неверный выбор, попробуйте снова.")
+			}
 		}
 	}
 }
