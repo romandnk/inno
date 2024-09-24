@@ -6,16 +6,16 @@ import (
 )
 
 var Users = userPool{
-	pool: make(map[domain.ID]chan interface{}),
+	pool: make(map[domain.ID]chan any),
 }
 
 type userPool struct {
 	sync.Mutex
 	// key - user id
-	pool map[domain.ID]chan interface{}
+	pool map[domain.ID]chan any
 }
 
-func (p *userPool) Send(uid domain.ID, msg interface{}) {
+func (p *userPool) Send(uid domain.ID, msg any) {
 	p.Lock()
 	defer p.Unlock()
 	ch, ok := p.pool[uid]
@@ -26,9 +26,9 @@ func (p *userPool) Send(uid domain.ID, msg interface{}) {
 	ch <- msg
 }
 
-func (p *userPool) New(uid domain.ID) <-chan interface{} {
+func (p *userPool) New(uid domain.ID) <-chan any {
 	p.Lock()
-	ch := make(chan interface{})
+	ch := make(chan any)
 	p.pool[uid] = ch
 	p.Unlock()
 
