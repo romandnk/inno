@@ -2,10 +2,12 @@ package app
 
 import (
 	"go.uber.org/fx"
-	"inno/hw11/config"
-	v1 "inno/hw11/internal/http/v1"
 	"net/http"
 	"time"
+	"zoo/config"
+	"zoo/internal/cache"
+	v1 "zoo/internal/http/v1"
+	"zoo/internal/repository"
 )
 
 func HTTPHandlerModule() fx.Option {
@@ -14,13 +16,15 @@ func HTTPHandlerModule() fx.Option {
 			func(cfg config.Config) (int, time.Duration) {
 				return cfg.RequestPerUser, cfg.RateLimitWindow
 			},
-			fx.Annotate(
-				func(requestNumPerUser int, rateLimitWindow time.Duration) *http.ServeMux {
-					handler := v1.NewHandler(requestNumPerUser, rateLimitWindow)
-					return handler.InitRoutes()
-				},
-				fx.As(new(http.Handler)),
-			),
+			func(requestNumPerUser int, rateLimitWindow time.Duration, repo *repository.Repository, cache cache.Cache) http.Handler {
+				handler := v1.NewHandler(
+					requestNumPerUser,
+					rateLimitWindow,
+					repo,
+					cache,
+				)
+				return handler.InitRoutes()
+			},
 		),
 	)
 }

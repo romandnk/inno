@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 	"go.uber.org/fx"
-	"inno/hw11/config"
-	httpserver "inno/hw11/pkg/server/http"
 	"log/slog"
 	"net"
 	"strconv"
+	"zoo/config"
+	httpserver "zoo/pkg/server/http"
 )
 
 func HTTPServerModule() fx.Option {

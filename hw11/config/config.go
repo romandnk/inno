@@ -3,17 +3,23 @@ package config
 import (
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
-	httpserver "inno/hw11/pkg/server/http"
 	"time"
+	"zoo/pkg/opentelemetry/metrics"
+	"zoo/pkg/opentelemetry/tracing"
+	httpserver "zoo/pkg/server/http"
+	"zoo/pkg/storage/postgres"
 )
 
 type Config struct {
-	RequestPerUser  int           `env:"REQUEST_PER_USER" env-default:"3"`
-	RateLimitWindow time.Duration `env:"RATE_WINDOW" env-default:"10s"`
+	RequestPerUser  int           `env:"REQUEST_PER_USER" env-default:"100"`
+	RateLimitWindow time.Duration `env:"RATE_WINDOW" env-default:"1s"`
 	HTTPServer      httpserver.Config
+	Postgres        postgres.Config
+	Tracer          tracing.Config
+	Metrics         metrics.Config
 }
 
-func NewConfig() (Config, error) {
+func New() (Config, error) {
 	var cfg Config
 
 	err := cleanenv.ReadEnv(&cfg)
