@@ -38,6 +38,14 @@ func (c *client) ReadJSON(v any) error {
 	return nil
 }
 
+func (c *client) CloseChat() error {
+	err := c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *client) Close() error {
 	return c.conn.Close()
 }

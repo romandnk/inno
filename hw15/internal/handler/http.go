@@ -2,7 +2,6 @@ package handler
 
 import (
 	"chat/internal/domain"
-	"chat/pkg/authclient"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -24,6 +23,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var userID int = 0
+
 func HandleHTTPReq(resp http.ResponseWriter, req *http.Request) {
 	defer func() {
 		resp.Header().Set("Access-Control-Allow-Origin", "*")
@@ -31,22 +32,22 @@ func HandleHTTPReq(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Add("Access-Control-Allow-Methods", "OPTIONS")
 	}()
 
-	token := req.Header.Get(HeaderAuthorization)
-
-	if token == "" {
-		resp.WriteHeader(http.StatusUnauthorized)
-		log.Println("Get request", req.Method, token, "error", http.StatusUnauthorized)
-		return
-	}
-
-	userID, valid := authclient.ValidateToken(token)
-	if !valid {
-		resp.WriteHeader(http.StatusUnauthorized)
-		log.Println("Get request", req.Method, token, "error", http.StatusUnauthorized)
-		return
-	}
-
-	log.Println("userID", userID)
+	//token := req.Header.Get(HeaderAuthorization)
+	//
+	//if token == "" {
+	//	resp.WriteHeader(http.StatusUnauthorized)
+	//	log.Println("Get request", req.Method, token, "error", http.StatusUnauthorized)
+	//	return
+	//}
+	//
+	//userID, valid := authclient.ValidateToken(token)
+	//if !valid {
+	//	resp.WriteHeader(http.StatusUnauthorized)
+	//	log.Println("Get request", req.Method, token, "error", http.StatusUnauthorized)
+	//	return
+	//}
+	//
+	//log.Println("userID", userID)
 
 	// обновление соединения до WebSocket
 	conn, err := upgrader.Upgrade(resp, req, nil)
@@ -55,5 +56,6 @@ func HandleHTTPReq(resp http.ResponseWriter, req *http.Request) {
 		log.Println(err)
 		return
 	}
+	userID++
 	HandleWsConn(conn, domain.ID(userID))
 }

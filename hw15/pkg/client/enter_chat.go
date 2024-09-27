@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"chat/internal/domain"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"os"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -30,10 +31,7 @@ func enterChat(ctx context.Context, cl *client) error {
 
 		fmt.Println("Вводите сообщения для отправки:")
 
-		wg := sync.WaitGroup{}
-		wg.Add(1)
 		go func() {
-			defer wg.Done()
 			for {
 				select {
 				case <-ctx.Done():
@@ -63,6 +61,42 @@ func enterChat(ctx context.Context, cl *client) error {
 				}
 			}
 		}()
-		wg.Wait()
+
+		for {
+			select {
+			case <-ctx.Done():
+				err := cl.CloseChat()
+				if err != nil {
+					return err
+				}
+
+				return nil
+			default:
+				body, err := reader.ReadString('\n')
+				if err != nil {
+					return fmt.Errorf("error reading message from console: %v", err)
+				}
+
+				req := domain.Request{
+					Type: "",
+				}
+
+				msg := domain.Message{
+					MsgID:  domain.ID(uuid.New().String()),
+					Body:   body,
+					TDate:  time.Now().UTC(),
+					FromID: domain.ID(chatID),
+				}
+				data, err := json.Marshal(msg)
+				if err != nil {
+					return fmt.Errorf("error marshalling message: %v", err)
+				}
+				req.Data = data
+
+				if err := cl.WriteJSON(req); err != nil {
+					return fmt.Errorf("error writing message: %v", err)
+				}
+			}
+		}
 	}
 }
