@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source usecase.go -destination mock/crypto_password/mock.go -package cryptopasswordmock -exclude_interfaces UserRepository,TokenRepository,JWTManager CryptoPassword
+//go:generate mockgen -source=usecase.go -destination=mock/user_repository/mock.go -package=userrepositorymock -exclude_interfaces CryptoPassword,TokenRepository,JWTManager UserRepository
+
 var ErrInternalError = errors.New("internal error")
 
 type UserRepository interface {
