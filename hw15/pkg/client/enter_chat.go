@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"os"
 	"strings"
@@ -16,7 +15,7 @@ import (
 func enterChat(ctx context.Context, cl *client) error {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Println("Введите айди чата для начала общения или введите return для выхода в предыдущее меню.:")
+		fmt.Println("Введите айди чата для начала общения или введите return для выхода в предыдущее меню:")
 		chatID, _ := reader.ReadString('\n')
 		chatID = strings.TrimSpace(chatID)
 
@@ -40,24 +39,28 @@ func enterChat(ctx context.Context, cl *client) error {
 					var msg domain.Delivery
 					err := cl.ReadJSON(&msg)
 					if err != nil {
-						log.Fatalf("error reading message: %v", err)
+						log.Printf("error reading message: %v", err)
 						return
 					}
+
 					if msg.Type != domain.DeliveryTypeNewMsg {
-						log.Fatalf("invalid delivery type: %v", msg.Type)
+						log.Printf("error reading message: %v", err)
 						return
 					}
-					data := msg.Data.(map[string]any)
 
-					date := data["t_date"]
-					t, err := time.Parse(time.RFC3339Nano, date.(string))
+					msgData := msg.Data.(map[string]any)
+
+					t, err := time.Parse(time.RFC3339, msgData["t_date"].(string))
 					if err != nil {
-						log.Fatalf("error parsing date: %v", err)
-						return
+						log.Printf("error parsing time: %v", err)
 					}
 
-					fmt.Printf("%s %s:\n", data["from_id"], t.Format(time.DateTime))
-					fmt.Println(data["body"])
+					fmt.Printf(
+						"%v %s: \n%s",
+						msgData["from_id"],
+						t.Format(time.DateTime),
+						msgData["body"],
+					)
 				}
 			}
 		}()
@@ -78,22 +81,22 @@ func enterChat(ctx context.Context, cl *client) error {
 				}
 
 				req := domain.Request{
-					Type: "",
+					Type: domain.ReqTypeNewMsg,
 				}
 
-				msg := domain.Message{
-					MsgID:  domain.ID(uuid.New().String()),
-					Body:   body,
-					TDate:  time.Now().UTC(),
-					FromID: domain.ID(chatID),
+				msg := domain.MessageChatRequest{
+					Msg:  body,
+					Type: domain.MsgTypeAdd,
+					ChID: domain.ID(chatID),
 				}
 				data, err := json.Marshal(msg)
 				if err != nil {
 					return fmt.Errorf("error marshalling message: %v", err)
 				}
+
 				req.Data = data
 
-				if err := cl.WriteJSON(req); err != nil {
+				if err = cl.WriteJSON(req); err != nil {
 					return fmt.Errorf("error writing message: %v", err)
 				}
 			}
