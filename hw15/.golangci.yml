@@ -1,0 +1,102 @@
+linters-settings:
+  goimports:
+    local-prefixes: chat
+
+  varnamelen:
+    max-distance: 6
+    min-name-length: 2
+    check-receiver: false
+    check-return: true
+    check-type-param: true
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-chan-recv-ok: true
+    ignore-names:
+      - err
+    ignore-decls:
+      - c context.Context
+      - t testing.T
+      - i int
+      - T any
+
+  lll:
+    line-length: 120
+    tab-width: 4
+
+  prealloc:
+    for-loops: true
+
+  staticcheck:
+    checks: [ "all" ]
+
+  misspell:
+    locale: US
+
+  goconst:
+    ignore-tests: true
+
+  nakedret:
+    max-func-lines: 30
+
+  gofmt:
+    simplify: true
+
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+
+  gocritic:
+    settings:
+      elseif:
+        skipBalanced: false
+      underef:
+        skipRecvDeref: false
+
+linters:
+  disable-all: true
+  enable:
+    - godox
+    - varnamelen
+    - exhaustive
+    - usestdlibvars
+    - unparam
+    - lll
+    - sqlclosecheck
+    - prealloc
+    - nilnil
+    - nilerr
+    - dupl
+    - errcheck
+    - bodyclose
+    - staticcheck
+    - exportloopref
+    - gocritic
+    - govet
+    - unused
+    - unconvert
+    - misspell
+    - goconst
+    - gosimple
+    - nakedret
+    - gocyclo
+    - goimports
+    - gofmt
+    - gochecknoglobals
+
+run:
+  concurrency: 4
+  timeout: 5m
+  issues-exit-code: 1
+  tests: false
+  allow-parallel-runners: true
+  allow-serial-runners: true
+  go: '1.22.3'
+
+severity:
+  default-severity: error
+  case-sensitive: true
